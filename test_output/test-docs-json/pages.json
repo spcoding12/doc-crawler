@@ -1,0 +1,29 @@
+{
+  "total_pages": 3,
+  "pages": [
+    {
+      "url": "https://example.com/intro",
+      "title": "Introduction",
+      "markdown": "# Intro\nWelcome!",
+      "images": [],
+      "level": 0,
+      "order": 1
+    },
+    {
+      "url": "https://example.com/getting-started",
+      "title": "Getting Started",
+      "markdown": "# Getting Started\nStep 1...",
+      "images": [],
+      "level": 0,
+      "order": 2
+    },
+    {
+      "url": "https://example.com/api",
+      "title": "API Reference",
+      "markdown": "# API\n## Methods...",
+      "images": [],
+      "level": 1,
+      "order": 3
+    }
+  ]
+}

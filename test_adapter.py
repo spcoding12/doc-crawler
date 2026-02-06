@@ -1,24 +1,32 @@
-"""测试图片下载模块"""
+"""测试输出生成模块"""
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 from pathlib import Path
-from src.images import download_image, download_images, replace_image_urls_in_markdown
+from src.exporter import PageContent, export_content
 
-# 测试单张图片下载
-print("=== Testing single image download ===")
-test_url = "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
-output_dir = Path("./test_output/images")
+# 创建测试数据
+pages = [
+    PageContent(url="https://example.com/intro", title="Introduction", markdown="# Intro\nWelcome!", images=[], level=0, order=1),
+    PageContent(url="https://example.com/getting-started", title="Getting Started", markdown="# Getting Started\nStep 1...", images=[], level=0, order=2),
+    PageContent(url="https://example.com/api", title="API Reference", markdown="# API\n## Methods...", images=[], level=1, order=3),
+]
 
-result = download_image(test_url, output_dir, index=0)
-print(f"Success: {result.success}")
-print(f"Local path: {result.local_path}")
-if result.error:
-    print(f"Error: {result.error}")
+output_dir = Path("./test_output")
 
-# 测试Markdown替换
-print("\n=== Testing Markdown URL replacement ===")
-markdown = "![logo](https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png)"
-updated = replace_image_urls_in_markdown(markdown, [result])
-print(f"Original: {markdown}")
-print(f"Updated: {updated}")
+# 测试单文件输出
+print("=== Testing Single Markdown ===")
+result = export_content(pages, output_dir, format="single", site_name="test-docs")
+print(f"Output: {result['files']}")
+
+# 测试多文件输出
+print("\n=== Testing Multiple Markdown ===")
+result2 = export_content(pages, output_dir, format="multiple", site_name="test-docs-multi")
+print(f"Files created: {len(result2['files'])}")
+for f in result2['files']:
+    print(f"  {Path(f).name}")
+
+# 测试JSON输出
+print("\n=== Testing JSON ===")
+result3 = export_content(pages, output_dir, format="json", site_name="test-docs-json")
+print(f"Output: {result3['files']}")
