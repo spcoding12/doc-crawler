@@ -1,26 +1,23 @@
-"""测试所有适配器"""
+"""测试内容提取模块"""
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 from src.fetcher import fetch_with_requests
-from src.frameworks import VuePressAdapter, MkDocsAdapter
-from bs4 import BeautifulSoup
+from src.extractor import extract_content
 
-# 测试 VuePress (Vue.js)
-print("=== Testing VuePress (vuejs.org) ===")
-html = fetch_with_requests('https://vuejs.org/guide/introduction.html').html
-soup = BeautifulSoup(html, 'lxml')
-adapter = VuePressAdapter()
-print(f"Detect: {adapter.detect(soup)}")
-links = adapter.get_sidebar_links(soup, 'https://vuejs.org/guide/introduction.html')
-print(f"Links found: {len(links)}")
-for l in links[:5]:
-    print(f"  {l['title'][:40]}")
+# 测试 FastAPI (MkDocs)
+print("=== Testing FastAPI ===")
+result = fetch_with_requests('https://fastapi.tiangolo.com/tutorial/')
+content = extract_content(result.html, result.url)
+print(f"Title: {content.title}")
+print(f"Images: {len(content.images)}")
+print(f"Markdown length: {len(content.markdown)}")
+print(f"First 200 chars:\n{content.markdown[:200]}")
 
-# 测试 MkDocs (FastAPI)
-print("\n=== Testing MkDocs (fastapi.tiangolo.com) ===")
-html2 = fetch_with_requests('https://fastapi.tiangolo.com/tutorial/').html
-soup2 = BeautifulSoup(html2, 'lxml')
-adapter2 = MkDocsAdapter()
-print(f"Detect: {adapter2.detect(soup2)}")
-links2 = adapter2.get_sidebar_links(soup2, 'https://fastapi.tiangolo.com/tutorial/')
-print(f"Links found: {len(links2)}")
-for l in links2[:5]:
-    print(f"  {l['title'][:40]}")
+# 测试 Vue.js (VuePress)
+print("\n=== Testing Vue.js ===")
+result2 = fetch_with_requests('https://vuejs.org/guide/introduction.html')
+content2 = extract_content(result2.html, result2.url)
+print(f"Title: {content2.title}")
+print(f"Images: {len(content2.images)}")
+print(f"Markdown length: {len(content2.markdown)}")
