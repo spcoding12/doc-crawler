@@ -1,18 +1,20 @@
-"""测试main.py的导入和crawl_docs函数"""
+"""验证改进后的GenericAdapter"""
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-from pathlib import Path
-from main import crawl_docs
+from src.fetcher import fetch_with_requests
+from src.frameworks import GenericAdapter
+from bs4 import BeautifulSoup
 
-# 测试爬取FastAPI文档（只爬取前5个页面作为测试）
-print("=== Testing crawl_docs with FastAPI ===")
-result = crawl_docs(
-    start_url="https://fastapi.tiangolo.com/tutorial/",
-    output_format="single",
-    download_images=False,  # 测试时不下载图片
-    output_dir=Path("./test_output"),
-)
+url = "https://docs.sonarsource.com/sonarqube-server/"
+print(f"Testing improved GenericAdapter on: {url}")
 
-print(f"\nResult: {result['success']}")
-print(f"Pages crawled: {result.get('pages_crawled', 0)}")
+result = fetch_with_requests(url)
+soup = BeautifulSoup(result.html, 'lxml')
+
+adapter = GenericAdapter()
+links = adapter.get_sidebar_links(soup, url)
+
+print(f"\nFound {len(links)} links:")
+for i, l in enumerate(links[:20], 1):
+    print(f"  {i}. {l['title'][:40]}: {l['url']}")
