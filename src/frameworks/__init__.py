@@ -5,6 +5,7 @@ from .docusaurus import DocusaurusAdapter
 from .vuepress import VuePressAdapter
 from .mkdocs import MkDocsAdapter
 from .gitbook import GitBookAdapter
+from .generic import GenericAdapter
 
 __all__ = [
     "FrameworkAdapter",
@@ -12,4 +13,5 @@ __all__ = [
     "VuePressAdapter",
     "MkDocsAdapter",
     "GitBookAdapter",
+    "GenericAdapter",
 ]
