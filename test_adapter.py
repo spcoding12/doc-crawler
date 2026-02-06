@@ -1,23 +1,24 @@
-"""测试内容提取模块"""
+"""测试图片下载模块"""
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-from src.fetcher import fetch_with_requests
-from src.extractor import extract_content
+from pathlib import Path
+from src.images import download_image, download_images, replace_image_urls_in_markdown
 
-# 测试 FastAPI (MkDocs)
-print("=== Testing FastAPI ===")
-result = fetch_with_requests('https://fastapi.tiangolo.com/tutorial/')
-content = extract_content(result.html, result.url)
-print(f"Title: {content.title}")
-print(f"Images: {len(content.images)}")
-print(f"Markdown length: {len(content.markdown)}")
-print(f"First 200 chars:\n{content.markdown[:200]}")
+# 测试单张图片下载
+print("=== Testing single image download ===")
+test_url = "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
+output_dir = Path("./test_output/images")
 
-# 测试 Vue.js (VuePress)
-print("\n=== Testing Vue.js ===")
-result2 = fetch_with_requests('https://vuejs.org/guide/introduction.html')
-content2 = extract_content(result2.html, result2.url)
-print(f"Title: {content2.title}")
-print(f"Images: {len(content2.images)}")
-print(f"Markdown length: {len(content2.markdown)}")
+result = download_image(test_url, output_dir, index=0)
+print(f"Success: {result.success}")
+print(f"Local path: {result.local_path}")
+if result.error:
+    print(f"Error: {result.error}")
+
+# 测试Markdown替换
+print("\n=== Testing Markdown URL replacement ===")
+markdown = "![logo](https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png)"
+updated = replace_image_urls_in_markdown(markdown, [result])
+print(f"Original: {markdown}")
+print(f"Updated: {updated}")
