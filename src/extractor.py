@@ -120,6 +120,137 @@ def html_to_markdown(html_content: str) -> str:
     return markdown.strip()
 
 
+def clean_markdown(markdown: str) -> str:
+    """
+    清理Markdown内容中的噪音
+    
+    处理：
+    - 图标/特殊字符（chevron-right, arrow-up-right等）
+    - UI元素（Copy, Was this helpful等）
+    - 重复标题
+    - 导航面包屑
+    
+    Args:
+        markdown: 原始Markdown
+    
+    Returns:
+        str: 清理后的Markdown
+    """
+    # 1. 清理图标字符（GitBook/SonarSource风格）
+    icon_patterns = [
+        r'chevron-right',
+        r'chevron-left',
+        r'chevron-down',
+        r'chevron-up',
+        r'arrow-up-right',
+        r'arrow-down',
+        r'arrow-left',
+        r'arrow-right',
+        r'sparkleAsk',
+        r'hashtag',
+        r'house',
+        r'server',
+        r'cloud',
+        r'terminal',
+        r'users-between-lines',
+    ]
+    for pattern in icon_patterns:
+        markdown = re.sub(pattern, '', markdown, flags=re.IGNORECASE)
+    
+    # 2. 清理UI按钮文本
+    ui_patterns = [
+        r'^Copy\s*$',
+        r'^Copy as Markdown\s*$',
+        r'^Back\s*$',
+        r'Was this helpful\?.*$',
+        r'^Table of contents\s*$',
+        r'Open Markdown Ask Docs AI.*$',
+        r'Open in Claude.*$',
+        r'\[Edit this page\].*$',
+        r'\[Request changes\].*$',
+        r'\[Previous.*\].*\[Next.*\].*$',
+    ]
+    for pattern in ui_patterns:
+        markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
+    
+    # 3. 清理空的标题（### 后面没内容）
+    markdown = re.sub(r'^###\s*$', '', markdown, flags=re.MULTILINE)
+    markdown = re.sub(r'^##\s*$', '', markdown, flags=re.MULTILINE)
+    
+    # 4. 清理重复的主标题（连续两个相同的 # 标题）
+    lines = markdown.split('\n')
+    cleaned_lines = []
+    prev_h1 = None
+    for line in lines:
+        if line.startswith('# ') and not line.startswith('## '):
+            current_h1 = line.strip()
+            if current_h1 == prev_h1:
+                continue  # 跳过重复的H1
+            prev_h1 = current_h1
+        cleaned_lines.append(line)
+    markdown = '\n'.join(cleaned_lines)
+    
+    # 5. 清理导航面包屑行（如 [Home](...) / [Get started](...) / ...）
+    markdown = re.sub(r'^\s*\[Home\].*?/.*?/.*$', '', markdown, flags=re.MULTILINE)
+    
+    # 6. 清理开头的导航残留
+    # 包括：纯链接列表、纯文本+链接列表（如Docker的侧边栏）
+    lines = markdown.split('\n')
+    content_start = 0
+    consecutive_nav_lines = 0
+    
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        
+        # 跳过空行
+        if not stripped:
+            if consecutive_nav_lines > 0:
+                consecutive_nav_lines += 1
+            continue
+        
+        # 如果是标题行，从这里开始可能是正文
+        if stripped.startswith('#'):
+            # 但如果标题后面紧跟链接列表，可能还是导航
+            if i + 1 < len(lines) and re.match(r'^\s*\*\s*\[.*?\]', lines[i + 1].strip()):
+                consecutive_nav_lines += 1
+                content_start = i + 1
+                continue
+            # 否则从标题开始是正文
+            content_start = i
+            break
+        
+        # 如果是纯链接行或列表项链接
+        if re.match(r'^\s*\*?\s*\[.*?\]\(.*?\)\s*$', stripped):
+            consecutive_nav_lines += 1
+            content_start = i + 1
+            continue
+        
+        # 如果是缩进的列表项（可能是子导航）
+        if re.match(r'^\s{2,}\*\s+', line):
+            consecutive_nav_lines += 1
+            content_start = i + 1
+            continue
+        
+        # 如果是短文本行（可能是导航分类标题如"Docker concepts"）
+        if len(stripped) < 40 and not any(c in stripped for c in '.!?:'):
+            # 短文本可能是导航类别
+            consecutive_nav_lines += 1
+            content_start = i + 1
+            continue
+        
+        # 其他情况，认为是正文开始
+        break
+    
+    # 如果连续导航行很多（超过10行），才清理
+    if content_start > 0 and consecutive_nav_lines > 5:
+        markdown = '\n'.join(lines[content_start:])
+    
+    # 7. 最终清理多余空行
+    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    
+    return markdown.strip()
+
+
 def extract_with_readability(html: str, url: str = "") -> ExtractedContent:
     """
     使用 readability 算法提取正文（兜底方案）
@@ -142,8 +273,9 @@ def extract_with_readability(html: str, url: str = "") -> ExtractedContent:
     # 提取图片
     images = extract_images(soup, url)
     
-    # 转为Markdown
+    # 转为Markdown并清理
     markdown = html_to_markdown(content_html)
+    markdown = clean_markdown(markdown)
     
     return ExtractedContent(
         title=title,
@@ -194,9 +326,10 @@ def extract_with_adapter(
     # 提取图片
     images = extract_images(content_element, url)
     
-    # 转为Markdown
+    # 转为Markdown并清理
     content_html = str(content_element)
     markdown = html_to_markdown(content_html)
+    markdown = clean_markdown(markdown)
     
     return ExtractedContent(
         title=title,
