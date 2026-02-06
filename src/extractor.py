@@ -168,10 +168,26 @@ def clean_markdown(markdown: str) -> str:
         r'Open in Claude.*$',
         r'\[Edit this page\].*$',
         r'\[Request changes\].*$',
-        r'\[Previous.*\].*\[Next.*\].*$',
+        # 页面底部导航
+        r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
+        r'\[Previous.*?\]\s*\[Next.*?\]',
     ]
     for pattern in ui_patterns:
         markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
+    
+    # 2.1 修复常见编码问题（Windows-1252编码被误读为UTF-8）
+    encoding_fixes = {
+        'â€™': "'",      # 右单引号
+        'â€œ': '"',      # 左双引号
+        'â€': '"',       # 右双引号
+        'â€"': '—',      # 破折号
+        'â€"': '–',      # 短破折号
+        'â€¦': '...',    # 省略号
+        'Â ': ' ',       # 非断行空格
+        '\xa0': ' ',     # 非断行空格
+    }
+    for wrong, right in encoding_fixes.items():
+        markdown = markdown.replace(wrong, right)
     
     # 3. 清理空的标题（### 后面没内容）
     markdown = re.sub(r'^###\s*$', '', markdown, flags=re.MULTILINE)
