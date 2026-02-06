@@ -1,0 +1,14 @@
+# Doc Crawler 依赖
+# 核心依赖
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+readability-lxml>=0.8.1
+html2text>=2024.2.0
+
+# 交互式CLI
+rich>=13.7.0
+questionary>=2.0.0
+
+# 可选：Playwright（JS渲染页面需要）
+# playwright>=1.40.0
