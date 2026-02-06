@@ -105,17 +105,22 @@ def crawl_docs(
     framework = detect_framework(result.html)
     print(f"📦 检测到框架: {framework.name} (置信度: {framework.confidence})")
     
-    # 3. 获取适配器
-    adapter_class = ADAPTERS.get(framework.name, GenericAdapter)
-    adapter = adapter_class()
-    
-    # 4. 解析侧边栏获取所有链接
+    # 3. 获取适配器并解析侧边栏链接
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(result.html, 'lxml')
+    
+    adapter_class = ADAPTERS.get(framework.name, GenericAdapter)
+    adapter = adapter_class()
     links = adapter.get_sidebar_links(soup, start_url)
     
+    # 如果检测到的适配器找不到足够链接，回退到GenericAdapter
+    if len(links) < 5 and adapter_class != GenericAdapter:
+        print(f"  ⚠️ {framework.name}适配器只找到{len(links)}个链接，尝试通用适配器...")
+        adapter = GenericAdapter()
+        links = adapter.get_sidebar_links(soup, start_url)
+    
     if not links:
-        # 如果没有找到侧边栏链接，至少包含当前页面
+        # 如果仍没有找到链接，至少包含当前页面
         links = [{"url": start_url, "title": "Index", "level": 0}]
     
     print(f"📄 发现 {len(links)} 个页面")
