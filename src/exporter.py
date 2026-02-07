@@ -192,7 +192,8 @@ def export_content(
     }
     
     if format == "single":
-        filepath = export_single_markdown(pages, site_dir)
+        filename = f"{sanitize_filename(site_name)}_all.md"
+        filepath = export_single_markdown(pages, site_dir, filename=filename)
         result["files"] = [str(filepath)]
     
     elif format == "multiple":
