@@ -12,6 +12,7 @@ output/
 test_output/
 .cursor/
 .gemini/
+benchmark_output/
 
 # OS
 .DS_Store
