@@ -95,7 +95,6 @@ def download_image(
     output_dir: Path,
     index: int = 0,
     timeout: int = DOWNLOAD_TIMEOUT,
-    session: Optional[requests.Session] = None,
 ) -> ImageDownloadResult:
     """
     下载单张图片
@@ -105,7 +104,6 @@ def download_image(
         output_dir: 输出目录
         index: 序号
         timeout: 超时时间
-        session: 可选的 requests.Session 实例
     
     Returns:
         ImageDownloadResult: 下载结果
@@ -115,8 +113,7 @@ def download_image(
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 下载图片
-        fetcher = session if session else requests
-        response = fetcher.get(url, headers=HEADERS, timeout=timeout, stream=True)
+        response = requests.get(url, headers=HEADERS, timeout=timeout, stream=True)
         response.raise_for_status()
         
         # 获取扩展名和文件名
@@ -147,33 +144,21 @@ def download_image(
 def download_images(
     image_urls: list[str],
     output_dir: Path,
-    session: Optional[requests.Session] = None,
 ) -> list[ImageDownloadResult]:
     """
-    批量下载图片（并行处理）
+    批量下载图片
     
     Args:
         image_urls: 图片URL列表
         output_dir: 输出目录
-        session: 可选的 requests.Session 实例
     
     Returns:
         list[ImageDownloadResult]: 下载结果列表
     """
-    from concurrent.futures import ThreadPoolExecutor
-    
-    results = [None] * len(image_urls)
-    
-    def download_worker(index, url):
-        return index, download_image(url, output_dir, index=index, session=session)
-    
-    # 使用线程池加速图片下载
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(download_worker, i, url) for i, url in enumerate(image_urls)]
-        for future in futures:
-            index, result = future.result()
-            results[index] = result
-            
+    results = []
+    for i, url in enumerate(image_urls):
+        result = download_image(url, output_dir, index=i)
+        results.append(result)
     return results
 
 
@@ -208,7 +193,6 @@ def process_images(
     image_urls: list[str],
     output_dir: Path,
     download: bool = True,
-    session: Optional[requests.Session] = None,
 ) -> tuple[str, list[ImageDownloadResult]]:
     """
     处理Markdown中的图片
@@ -218,7 +202,6 @@ def process_images(
         image_urls: 图片URL列表
         output_dir: 输出目录
         download: 是否下载图片
-        session: 可选的 requests.Session 实例
     
     Returns:
         tuple: (更新后的Markdown, 下载结果列表)
@@ -230,7 +213,7 @@ def process_images(
     images_dir = output_dir / "images"
     
     # 下载图片
-    results = download_images(image_urls, images_dir, session=session)
+    results = download_images(image_urls, images_dir)
     
     # 替换URL
     updated_markdown = replace_image_urls_in_markdown(markdown, results)

@@ -59,13 +59,20 @@ class GenericAdapter(FrameworkAdapter):
         for selector in self.SIDEBAR_SELECTORS:
             elements = soup.select(selector)
             if len(elements) > 3:
-                for link in elements[:50]:
+                for link in elements[:2000]:
                     href = link.get('href', '')
                     if not href or href.startswith('#') or href.startswith('javascript:'):
                         continue
                     
                     full_url = urljoin(base_url, href)
-                    if urlparse(full_url).netloc != base_domain:
+                    parsed_url = urlparse(full_url)
+                    
+                    # 只保留同域名的链接
+                    if parsed_url.netloc != base_domain:
+                        continue
+                    
+                    # 只保留同路径前缀的链接（限制在当前模块内）
+                    if base_path and not parsed_url.path.startswith(base_path):
                         continue
                     
                     normalized_url = full_url.rstrip('/')
@@ -128,7 +135,7 @@ class GenericAdapter(FrameworkAdapter):
                 })
             
             # 限制数量
-            links = links[:100]
+            links = links[:5000]
         
         return links
     
