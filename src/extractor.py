@@ -171,6 +171,10 @@ def clean_markdown(markdown: str) -> str:
         # 页面底部导航
         r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
         r'\[Previous.*?\]\s*\[Next.*?\]',
+        # JS 碎片处理 (处理复制按钮残留)
+        r'\]\\s\+/gm,.*$', 
+        r'copying = (true|false).*$',
+        r'setTimeout\(.*?2000\);\s*$',
     ]
     for pattern in ui_patterns:
         markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
