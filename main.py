@@ -135,7 +135,16 @@ def crawl_docs(
     
     pages_results = [None] * len(links)
     failed_pages = []
+    
+    # 配置 Session 连接池，防止高并发下连接 starvation
     session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(
+        pool_connections=100, 
+        pool_maxsize=100,
+        max_retries=3
+    )
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     
     def process_single_link(index, link, shared_session):
         url = link['url']
@@ -165,8 +174,8 @@ def crawl_docs(
             return index, {"url": url, "error": str(e)}
 
     # 并发执行
-    max_workers = 5
-    print(f"🚀 启动并发爬取 (线程数: {max_workers})...")
+    max_workers = 10
+    print(f"🚀 启动高性能并发爬取 (线程数: {max_workers}, 连接池: 100)...")
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_index = {
