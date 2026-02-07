@@ -129,15 +129,15 @@ def crawl_docs(
     
     print(f"📄 发现 {len(links)} 个页面")
     
-    # 5. 爬取所有页面
-    pages = []
+    # 5. 爬取所有页面（并发处理）
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    
+    pages_results = [None] * len(links)
     failed_pages = []
     
-    for i, link in enumerate(links, 1):
+    def process_single_link(index, link):
         url = link['url']
         title = link['title']
-        
-        print(f"  [{i}/{len(links)}] {title[:40]}...", end=" ", flush=True)
         
         try:
             page_result = fetch_with_requests(url)
@@ -151,22 +151,38 @@ def crawl_docs(
                     markdown, content.images, images_dir, download=True
                 )
             
-            pages.append(PageContent(
+            return index, PageContent(
                 url=url,
                 title=content.title or title,
                 markdown=markdown,
                 images=content.images,
                 level=link.get('level', 0),
-                order=i,
-            ))
-            print("✅")
-            
+                order=index + 1,
+            )
         except Exception as e:
-            print(f"❌ {str(e)[:30]}")
-            failed_pages.append({"url": url, "error": str(e)})
+            return index, {"url": url, "error": str(e)}
+
+    # 并发执行
+    max_workers = 5
+    print(f"🚀 启动并发爬取 (线程数: {max_workers})...")
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_index = {
+            executor.submit(process_single_link, i, link): i 
+            for i, link in enumerate(links)
+        }
         
-        # 避免请求过快
-        time.sleep(0.5)
+        for future in as_completed(future_to_index):
+            i, result = future.result()
+            if isinstance(result, PageContent):
+                pages_results[i] = result
+                print(f"  ✅ [{i+1}/{len(links)}] {result.title[:30]}...")
+            else:
+                failed_pages.append(result)
+                print(f"  ❌ [{i+1}/{len(links)}] 抓取失败: {result['url']}")
+
+    # 过滤掉 None 并获取成功的页面
+    pages = [p for p in pages_results if p is not None]
     
     print(f"\n✅ 成功爬取 {len(pages)} 个页面")
     if failed_pages:
