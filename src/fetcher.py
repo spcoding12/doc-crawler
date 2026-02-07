@@ -36,13 +36,14 @@ class FetchResult:
         self.is_js_rendered = False  # 标记是否通过JS渲染获取
 
 
-def fetch_with_requests(url: str, timeout: int = DEFAULT_TIMEOUT) -> FetchResult:
+def fetch_with_requests(url: str, timeout: int = DEFAULT_TIMEOUT, session: Optional[requests.Session] = None) -> FetchResult:
     """
     使用 requests 获取页面
     
     Args:
         url: 要获取的URL
         timeout: 超时时间（秒）
+        session: 可选的 requests.Session 实例
     
     Returns:
         FetchResult: 获取结果
@@ -51,7 +52,8 @@ def fetch_with_requests(url: str, timeout: int = DEFAULT_TIMEOUT) -> FetchResult
         FetchError: 获取失败时抛出
     """
     try:
-        response = requests.get(
+        fetcher = session if session else requests
+        response = fetcher.get(
             url, 
             headers=DEFAULT_HEADERS, 
             timeout=timeout,

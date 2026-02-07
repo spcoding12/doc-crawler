@@ -131,16 +131,18 @@ def crawl_docs(
     
     # 5. 爬取所有页面（并发处理）
     from concurrent.futures import ThreadPoolExecutor, as_completed
+    import requests
     
     pages_results = [None] * len(links)
     failed_pages = []
+    session = requests.Session()
     
-    def process_single_link(index, link):
+    def process_single_link(index, link, shared_session):
         url = link['url']
         title = link['title']
         
         try:
-            page_result = fetch_with_requests(url)
+            page_result = fetch_with_requests(url, session=shared_session)
             content = extract_content(page_result.html, url)
             
             # 处理图片
@@ -148,7 +150,7 @@ def crawl_docs(
             if download_images and content.images:
                 images_dir = output_dir / site_name
                 markdown, img_results = process_images(
-                    markdown, content.images, images_dir, download=True
+                    markdown, content.images, images_dir, download=True, session=shared_session
                 )
             
             return index, PageContent(
@@ -168,7 +170,7 @@ def crawl_docs(
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_index = {
-            executor.submit(process_single_link, i, link): i 
+            executor.submit(process_single_link, i, link, session): i 
             for i, link in enumerate(links)
         }
         
@@ -180,6 +182,8 @@ def crawl_docs(
             else:
                 failed_pages.append(result)
                 print(f"  ❌ [{i+1}/{len(links)}] 抓取失败: {result['url']}")
+    
+    session.close()
 
     # 过滤掉 None 并获取成功的页面
     pages = [p for p in pages_results if p is not None]
