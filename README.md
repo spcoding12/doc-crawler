@@ -94,5 +94,10 @@ output/
 
 ---
 
+## 📖 深入了解
+- [它是如何工作的？（通俗版原理说明）](docs/how_it_works.md)
+- [需求规格](docs/requirements_v1.md)
+- [实现方案](docs/implementation_plan.md)
+
 ## 📝 许可证
 MIT License
