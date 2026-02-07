@@ -105,6 +105,10 @@ def crawl_docs(
     framework = detect_framework(result.html)
     print(f"📦 检测到框架: {framework.name} (置信度: {framework.confidence})")
     
+    # 根据URL路径生成唯一的站点目录名，避免同一域名下不同文档相互覆盖
+    parsed_url = urlparse(start_url)
+    site_name = parsed_url.netloc + parsed_url.path.rstrip('/')
+    
     # 3. 获取适配器并解析侧边栏链接
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(result.html, 'lxml')
@@ -142,7 +146,6 @@ def crawl_docs(
             # 处理图片
             markdown = content.markdown
             if download_images and content.images:
-                site_name = urlparse(start_url).netloc
                 images_dir = output_dir / site_name
                 markdown, img_results = process_images(
                     markdown, content.images, images_dir, download=True
@@ -170,7 +173,6 @@ def crawl_docs(
         print(f"❌ 失败 {len(failed_pages)} 个页面")
     
     # 6. 导出
-    site_name = urlparse(start_url).netloc
     export_result = export_content(
         pages, output_dir, format=output_format, site_name=site_name
     )
