@@ -6,6 +6,7 @@
 - VuePress  
 - MkDocs
 - GitBook
+- Docsify
 """
 
 from bs4 import BeautifulSoup
@@ -125,6 +126,26 @@ def detect_gitbook(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     return None
 
 
+def detect_docsify(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
+    """检测 Docsify 框架"""
+    # 检查 script 标签中是否引用了 docsify
+    for script in soup.find_all('script'):
+        src = script.get('src', '')
+        text = script.string or ''
+        if 'docsify' in src.lower() or '$docsify' in text:
+            return FrameworkInfo('docsify', confidence=0.9)
+    
+    # 检查特征元素
+    if soup.select_one('.sidebar-toggle'):
+        body = soup.find('body')
+        if body:
+            body_class = ' '.join(body.get('class', []))
+            if 'ready' in body_class:
+                return FrameworkInfo('docsify', confidence=0.8)
+    
+    return None
+
+
 def detect_framework(html: str) -> FrameworkInfo:
     """
     检测页面使用的文档框架
@@ -143,6 +164,7 @@ def detect_framework(html: str) -> FrameworkInfo:
         detect_mkdocs,
         detect_vuepress,
         detect_gitbook,
+        detect_docsify,
     ]
     
     for detector in detectors:

@@ -1,6 +1,6 @@
 # Doc Crawler 🚀
 
-**通用技术文档爬取工具** —— 将任意技术文档网站（Docusaurus, VuePress, MkDocs, GitBook 等）一键批量抓取并转换为结构清晰、内容纯净的本地 Markdown 知识库。
+**通用技术文档爬取工具** —— 将任意技术文档网站（Docusaurus, VuePress, MkDocs, GitBook, Docsify 等）一键批量抓取并转换为结构清晰、内容纯净的本地 Markdown 知识库。
 
 > **核心价值**：为大模型（LLM）训练、知识库构建（RAG）、NotebookLM 导入提供高质量的技术文档语料。
 
@@ -33,7 +33,7 @@ graph TD
 ### 核心模块说明
 - **Fetcher (智能获取)**：支持 `requests` 基础获取，具备 JS 渲染检测能力。
 - **Detector (特征识别)**：通过 Meta 标签、CSS 类名、脚本指纹自动识别文档框架类型。
-- **Framework Adapters (适配器层)**：预置 Docusaurus, VuePress, MkDocs, GitBook 规则。
+- **Framework Adapters (适配器层)**：预置 Docusaurus, VuePress, MkDocs, GitBook, Docsify 规则。
 - **Extractor (内容中枢)**：融合了适配器规则提取与 `readability` 结构化算法，确保在未知网站下也能提取正文。
 - **Noise Cleaner (噪音清理)**：针对技术文档特有的图标字符（â€™）、侧边栏残留、代码复制按钮、底部导航进行深度清洗。
 - **Images (图像托管)**：自动抓取图片并将其托管到本地目录，同步更新 Markdown 中的引用路径。
@@ -54,6 +54,12 @@ graph TD
 - **编码修复**：修正 Windows-1252 常见的乱码（如 `â€™` -> `'`）。
 - **结构化重组**：移除重复的 H1 标题，清理开头的多余面包屑导航。
 
+### 4. Docsify / Hash 路由 SPA 支持
+对于使用 Hash 路由的 SPA 文档站点（如 Docsify），传统 HTTP 请求无法获取内容。Doc Crawler 会自动检测 Hash URL（`#/path`），直接请求 `_sidebar.md` 解析目录结构，然后请求原始 `.md` 源文件获取内容——**无需 Playwright 等浏览器渲染工具**。
+
+### 5. 大文档智能拆分
+当 `single` 模式下合并文档超过 **400,000 字符**（NotebookLM 单文件限制约 500,000 字）时，Doc Crawler 会**自动按 URL 目录结构拆分**为多个分片文件（`_part1.md`、`_part2.md`...），每个分片开头自动生成目录索引。
+
 ---
 
 ## 🚀 快速开始
@@ -73,7 +79,7 @@ python main.py
 ### 操作流程
 1. **输入起始 URL**：如 `https://docs.docker.com/get-started/`
 2. **选择输出格式**：
-   - `single`: 全部文档合并为一个 `all.md`（推荐用于导入 NotebookLM）。
+   - `single`: 全部文档合并为一个 `all.md`（推荐用于导入 NotebookLM）。文档过大时自动拆分为多个 `_part.md`。
    - `multiple`: 按原网站目录结构保存多个文件。
    - `json`: 用于程序化进一步处理。
 3. **选择图片处理**：选择“是”将下载所有图片并自动处理路经。

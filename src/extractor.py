@@ -19,6 +19,7 @@ from .frameworks import (
     VuePressAdapter,
     MkDocsAdapter,
     GitBookAdapter,
+    DocsifyAdapter,
     GenericAdapter,
 )
 from .detector import detect_framework
@@ -48,6 +49,7 @@ ADAPTERS = {
     'vuepress': VuePressAdapter,
     'mkdocs': MkDocsAdapter,
     'gitbook': GitBookAdapter,
+    'docsify': DocsifyAdapter,
     'generic': GenericAdapter,
     'unknown': GenericAdapter,
 }

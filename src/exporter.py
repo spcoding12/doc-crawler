@@ -10,7 +10,9 @@
 import json
 from pathlib import Path
 from typing import Optional
+from collections import OrderedDict
 from dataclasses import dataclass, asdict
+from urllib.parse import urlparse
 import re
 
 
@@ -58,38 +60,172 @@ def generate_index_md(pages: list[PageContent], title: str = "目录") -> str:
     return '\n'.join(lines)
 
 
-def export_single_markdown(
-    pages: list[PageContent],
-    output_dir: Path,
-    filename: str = "all.md",
-) -> Path:
+def _get_directory_key(url: str) -> str:
     """
-    导出为单个Markdown文件
-    
-    Args:
-        pages: 页面列表
-        output_dir: 输出目录
-        filename: 文件名
+    从 URL 中提取第一级目录作为分组键。
+    例如: https://docs.example.com/guide/getting-started -> 'guide'
+         https://docs.example.com/api/v2/users -> 'api'
+    """
+    path = urlparse(url).path.strip('/')
+    parts = path.split('/')
+    # 取第一级目录；如果只有一级（即根页面），用 '_root' 作为键
+    return parts[0] if parts and parts[0] else '_root'
+
+
+def _group_pages_by_directory(pages: list[PageContent]) -> OrderedDict:
+    """
+    按 URL 第一级目录对页面进行分组，保持原始顺序。
     
     Returns:
-        Path: 输出文件路径
+        OrderedDict: {directory_key: [PageContent, ...]}
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
+    groups = OrderedDict()
+    for page in pages:
+        key = _get_directory_key(page.url)
+        if key not in groups:
+            groups[key] = []
+        groups[key].append(page)
+    return groups
+
+
+def _render_pages_to_markdown(pages: list[PageContent]) -> str:
+    """将页面列表渲染为 Markdown 文本"""
     lines = []
     for page in pages:
-        # 添加标题
         heading_level = min(page.level + 1, 6)
         lines.append(f"{'#' * heading_level} {page.title}\n")
         lines.append(page.markdown)
         lines.append("\n---\n")
+    return '\n'.join(lines)
+
+
+def _generate_part_header(part_index: int, total_parts: int, group_keys: list[str]) -> str:
+    """
+    为每个分片生成头部信息（包含分片编号和该分片包含的章节目录）。
+    """
+    lines = [
+        f"> 📖 本文件为第 {part_index} / {total_parts} 部分\n",
+        "**本文件包含以下章节：**\n",
+    ]
+    for key in group_keys:
+        lines.append(f"- {key}")
+    lines.append("\n---\n")
+    return '\n'.join(lines)
+
+
+def _split_groups_into_parts(
+    groups: OrderedDict,
+    max_chars: int,
+) -> list[list[tuple[str, list[PageContent]]]]:
+    """
+    根据字符数阈值，将分组拆分为多个分片。
     
-    content = '\n'.join(lines)
+    策略：
+    - 依次将分组加入当前分片
+    - 如果加入后超出阈值，则开启新分片
+    - 如果单个分组本身就超出阈值，仍作为独立分片（不强行拆散同一目录）
     
-    filepath = output_dir / filename
-    filepath.write_text(content, encoding='utf-8')
+    Args:
+        groups: 按目录分组的 OrderedDict
+        max_chars: 每个分片的最大字符数
     
-    return filepath
+    Returns:
+        list of parts, 每个 part 是 [(group_key, [pages]), ...]
+    """
+    parts = []
+    current_part = []
+    current_chars = 0
+    
+    for key, pages in groups.items():
+        group_text = _render_pages_to_markdown(pages)
+        group_chars = len(group_text)
+        
+        # 如果当前分片为空，直接加入（即使超出阈值也不能把一个组拆散）
+        if not current_part:
+            current_part.append((key, pages))
+            current_chars = group_chars
+            continue
+        
+        # 如果加入后超出阈值，先保存当前分片，开启新分片
+        if current_chars + group_chars > max_chars:
+            parts.append(current_part)
+            current_part = [(key, pages)]
+            current_chars = group_chars
+        else:
+            current_part.append((key, pages))
+            current_chars += group_chars
+    
+    # 别忘了最后一个分片
+    if current_part:
+        parts.append(current_part)
+    
+    return parts
+
+
+def export_single_markdown(
+    pages: list[PageContent],
+    output_dir: Path,
+    filename: str = "all.md",
+    max_chars: int = 400_000,
+) -> list[Path]:
+    """
+    导出为单个或多个Markdown文件（自动根据字符数拆分）。
+    
+    当总字符数未超过 max_chars 时，输出单个文件（行为不变）。
+    当总字符数超出 max_chars 时，按目录分组拆分为多个 part 文件。
+    
+    Args:
+        pages: 页面列表
+        output_dir: 输出目录
+        filename: 基础文件名
+        max_chars: 单个文件最大字符数，默认 400,000
+    
+    Returns:
+        list[Path]: 输出文件路径列表
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 先渲染完整内容，判断是否需要拆分
+    full_content = _render_pages_to_markdown(pages)
+    
+    if len(full_content) <= max_chars:
+        # 不需要拆分，保持原有行为
+        filepath = output_dir / filename
+        filepath.write_text(full_content, encoding='utf-8')
+        return [filepath]
+    
+    # --- 需要拆分 ---
+    print(f"\n⚠️  合并文档共 {len(full_content):,} 字符，超出单文件阈值 ({max_chars:,})，将自动拆分...")
+    
+    groups = _group_pages_by_directory(pages)
+    parts = _split_groups_into_parts(groups, max_chars)
+    
+    total_parts = len(parts)
+    print(f"📦 按目录结构拆分为 {total_parts} 个文件")
+    
+    # 生成文件名：将 xxx_all.md -> xxx_all_part1.md, xxx_all_part2.md, ...
+    stem = Path(filename).stem   # e.g. "site_all"
+    suffix = Path(filename).suffix  # e.g. ".md"
+    
+    created_files = []
+    for i, part in enumerate(parts, 1):
+        part_filename = f"{stem}_part{i}{suffix}"
+        group_keys = [key for key, _ in part]
+        all_pages = []
+        for _, pages_in_group in part:
+            all_pages.extend(pages_in_group)
+        
+        # 组装内容：头部 + 正文
+        header = _generate_part_header(i, total_parts, group_keys)
+        body = _render_pages_to_markdown(all_pages)
+        content = header + body
+        
+        filepath = output_dir / part_filename
+        filepath.write_text(content, encoding='utf-8')
+        created_files.append(filepath)
+        print(f"  📝 {part_filename} ({len(content):,} 字符, {len(all_pages)} 页)")
+    
+    return created_files
 
 
 def export_multiple_markdown(
@@ -193,8 +329,8 @@ def export_content(
     
     if format == "single":
         filename = f"{sanitize_filename(site_name)}_all.md"
-        filepath = export_single_markdown(pages, site_dir, filename=filename)
-        result["files"] = [str(filepath)]
+        filepaths = export_single_markdown(pages, site_dir, filename=filename)
+        result["files"] = [str(f) for f in filepaths]
     
     elif format == "multiple":
         filepaths = export_multiple_markdown(pages, site_dir)
