@@ -6,16 +6,20 @@ Doc Crawler - 通用技术文档爬取工具
 
 import sys
 import time
+import re
 from pathlib import Path
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 # 确保UTF-8输出
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
+from bs4 import BeautifulSoup
 from src.fetcher import fetch_with_requests, FetchError
 from src.detector import detect_framework
-from src.extractor import extract_content
+from src.extractor import extract_content, clean_markdown
 from src.exporter import PageContent, export_content
 from src.images import process_images
 from src.frameworks import (
@@ -136,7 +140,6 @@ def crawl_docs(
             if not adapter.config['root_path'].endswith('/'):
                 adapter.config['root_path'] += '/'
             # 解析侧边栏获取链接
-            from bs4 import BeautifulSoup
             dummy_soup = BeautifulSoup("<html></html>", "lxml")
             links = adapter.get_sidebar_links(dummy_soup, start_url)
         except FetchError:
@@ -155,7 +158,6 @@ def crawl_docs(
         print(f"📦 检测到框架: {framework.name} (置信度: {framework.confidence})")
         
         # 3. 初始化爬取池
-        from bs4 import BeautifulSoup
         soup = BeautifulSoup(result.html, 'lxml')
         
         adapter_class = ADAPTERS.get(framework.name, GenericAdapter)
@@ -185,8 +187,6 @@ def crawl_docs(
         print(f"📦 Docsify 站点，已从 _sidebar.md 获取 {len(to_crawl)} 个页面链接")
     else:
         print("🔍 正在进行高速并发扫描...")
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        from threading import Lock
         
         to_crawl = links.copy()
         seen_urls = {l['url'].rstrip('/') for l in links}
@@ -255,14 +255,12 @@ def crawl_docs(
         try:
             # --- Docsify 特殊处理：直接请求 .md 文件 ---
             if link.get('is_docsify_md'):
-                from src.extractor import clean_markdown
                 md_result = fetch_with_requests(url, timeout=10)
                 markdown = md_result.html  # .md 文件的内容就是纯 Markdown
                 markdown = clean_markdown(markdown)
                 
                 # 提取图片（从 Markdown 中解析）
-                import re as _re
-                images = _re.findall(r'!\[.*?\]\((.*?)\)', markdown)
+                images = re.findall(r'!\[.*?\]\((.*?)\)', markdown)
                 
                 # 处理图片
                 if download_images and images:
