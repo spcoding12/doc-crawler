@@ -43,6 +43,59 @@ class ExtractedContent:
         return f"ExtractedContent(title='{self.title[:30]}...', images={len(self.images)})"
 
 
+# 预编译正则表达式
+# 1. 图标/特殊字符
+COMPILED_ICON_PATTERNS = [
+    re.compile(p, flags=re.IGNORECASE) for p in [
+        r'chevron-right',
+        r'chevron-left',
+        r'chevron-down',
+        r'chevron-up',
+        r'arrow-up-right',
+        r'arrow-down',
+        r'arrow-left',
+        r'arrow-right',
+        r'sparkleAsk',
+        r'hashtag',
+        r'house',
+        r'server',
+        r'cloud',
+        r'terminal',
+        r'users-between-lines',
+    ]
+]
+
+# 2. UI按钮文本
+COMPILED_UI_PATTERNS = [
+    re.compile(p, flags=re.MULTILINE | re.IGNORECASE) for p in [
+        r'^Copy\s*$',
+        r'^Copy as Markdown\s*$',
+        r'^Back\s*$',
+        r'Was this helpful\?.*$',
+        r'^Table of contents\s*$',
+        r'Open Markdown Ask Docs AI.*$',
+        r'Open in Claude.*$',
+        r'\[Edit this page\].*$',
+        r'\[Request changes\].*$',
+        # 页面底部导航
+        r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
+        r'\[Previous.*?\]\s*\[Next.*?\]',
+        # JS 碎片处理 (处理复制按钮残留)
+        r'\]\\s\+/gm,.*$',
+        r'copying = (true|false).*$',
+        r'setTimeout\(.*?2000\);\s*$',
+    ]
+]
+
+# 3. 其他杂项正则表达式
+MULTI_NEWLINE_PATTERN = re.compile(r'\n{3,}')
+H3_EMPTY_PATTERN = re.compile(r'^###\s*$', flags=re.MULTILINE)
+H2_EMPTY_PATTERN = re.compile(r'^##\s*$', flags=re.MULTILINE)
+BREADCRUMB_PATTERN = re.compile(r'^\s*\[Home\].*?/.*?/.*$', flags=re.MULTILINE)
+NAV_LINK_LIST_PATTERN = re.compile(r'^\s*\*\s*\[.*?\]')
+NAV_PURE_LINK_PATTERN = re.compile(r'^\s*\*?\s*\[.*?\]\(.*?\)\s*$')
+NAV_INDENTED_LIST_PATTERN = re.compile(r'^\s{2,}\*\s+')
+
 # 框架适配器映射
 ADAPTERS = {
     'docusaurus': DocusaurusAdapter,
@@ -117,7 +170,7 @@ def html_to_markdown(html_content: str) -> str:
     markdown = h.handle(html_content)
     
     # 清理多余空行
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    markdown = MULTI_NEWLINE_PATTERN.sub('\n\n', markdown)
     
     return markdown.strip()
 
@@ -139,47 +192,12 @@ def clean_markdown(markdown: str) -> str:
         str: 清理后的Markdown
     """
     # 1. 清理图标字符（GitBook/SonarSource风格）
-    icon_patterns = [
-        r'chevron-right',
-        r'chevron-left',
-        r'chevron-down',
-        r'chevron-up',
-        r'arrow-up-right',
-        r'arrow-down',
-        r'arrow-left',
-        r'arrow-right',
-        r'sparkleAsk',
-        r'hashtag',
-        r'house',
-        r'server',
-        r'cloud',
-        r'terminal',
-        r'users-between-lines',
-    ]
-    for pattern in icon_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.IGNORECASE)
+    for pattern in COMPILED_ICON_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2. 清理UI按钮文本
-    ui_patterns = [
-        r'^Copy\s*$',
-        r'^Copy as Markdown\s*$',
-        r'^Back\s*$',
-        r'Was this helpful\?.*$',
-        r'^Table of contents\s*$',
-        r'Open Markdown Ask Docs AI.*$',
-        r'Open in Claude.*$',
-        r'\[Edit this page\].*$',
-        r'\[Request changes\].*$',
-        # 页面底部导航
-        r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
-        r'\[Previous.*?\]\s*\[Next.*?\]',
-        # JS 碎片处理 (处理复制按钮残留)
-        r'\]\\s\+/gm,.*$', 
-        r'copying = (true|false).*$',
-        r'setTimeout\(.*?2000\);\s*$',
-    ]
-    for pattern in ui_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
+    for pattern in COMPILED_UI_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2.1 修复常见编码问题（Windows-1252编码被误读为UTF-8）
     encoding_fixes = {
@@ -196,8 +214,8 @@ def clean_markdown(markdown: str) -> str:
         markdown = markdown.replace(wrong, right)
     
     # 3. 清理空的标题（### 后面没内容）
-    markdown = re.sub(r'^###\s*$', '', markdown, flags=re.MULTILINE)
-    markdown = re.sub(r'^##\s*$', '', markdown, flags=re.MULTILINE)
+    markdown = H3_EMPTY_PATTERN.sub('', markdown)
+    markdown = H2_EMPTY_PATTERN.sub('', markdown)
     
     # 4. 清理重复的主标题（连续两个相同的 # 标题）
     lines = markdown.split('\n')
@@ -213,7 +231,7 @@ def clean_markdown(markdown: str) -> str:
     markdown = '\n'.join(cleaned_lines)
     
     # 5. 清理导航面包屑行（如 [Home](...) / [Get started](...) / ...）
-    markdown = re.sub(r'^\s*\[Home\].*?/.*?/.*$', '', markdown, flags=re.MULTILINE)
+    markdown = BREADCRUMB_PATTERN.sub('', markdown)
     
     # 6. 清理开头的导航残留
     # 包括：纯链接列表、纯文本+链接列表（如Docker的侧边栏）
@@ -233,7 +251,7 @@ def clean_markdown(markdown: str) -> str:
         # 如果是标题行，从这里开始可能是正文
         if stripped.startswith('#'):
             # 但如果标题后面紧跟链接列表，可能还是导航
-            if i + 1 < len(lines) and re.match(r'^\s*\*\s*\[.*?\]', lines[i + 1].strip()):
+            if i + 1 < len(lines) and NAV_LINK_LIST_PATTERN.match(lines[i + 1].strip()):
                 consecutive_nav_lines += 1
                 content_start = i + 1
                 continue
@@ -242,13 +260,13 @@ def clean_markdown(markdown: str) -> str:
             break
         
         # 如果是纯链接行或列表项链接
-        if re.match(r'^\s*\*?\s*\[.*?\]\(.*?\)\s*$', stripped):
+        if NAV_PURE_LINK_PATTERN.match(stripped):
             consecutive_nav_lines += 1
             content_start = i + 1
             continue
         
         # 如果是缩进的列表项（可能是子导航）
-        if re.match(r'^\s{2,}\*\s+', line):
+        if NAV_INDENTED_LIST_PATTERN.match(line):
             consecutive_nav_lines += 1
             content_start = i + 1
             continue
@@ -268,7 +286,7 @@ def clean_markdown(markdown: str) -> str:
         markdown = '\n'.join(lines[content_start:])
     
     # 7. 最终清理多余空行
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    markdown = MULTI_NEWLINE_PATTERN.sub('\n\n', markdown)
     
     return markdown.strip()
 
