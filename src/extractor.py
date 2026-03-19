@@ -25,6 +25,53 @@ from .frameworks import (
 from .detector import detect_framework
 
 
+# Bolt Performance Optimization:
+# Pre-compile regular expressions at the module level to avoid performance overhead
+# from re-compilation or cache lookups inside frequently called functions and loops.
+_MULTIPLE_NEWLINES_RE = re.compile(r'\n{3,}')
+_EMPTY_H3_RE = re.compile(r'^###\s*$', flags=re.MULTILINE)
+_EMPTY_H2_RE = re.compile(r'^##\s*$', flags=re.MULTILINE)
+_BREADCRUMB_RE = re.compile(r'^\s*\[Home\].*?/.*?/.*$', flags=re.MULTILINE)
+_HEADER_LINK_RE = re.compile(r'^\s*\*\s*\[.*?\]')
+_NAV_LINK_RE = re.compile(r'^\s*\*?\s*\[.*?\]\(.*?\)\s*$')
+_INDENTED_LIST_RE = re.compile(r'^\s{2,}\*\s+')
+
+_ICON_PATTERNS = [
+    re.compile(r'chevron-right', flags=re.IGNORECASE),
+    re.compile(r'chevron-left', flags=re.IGNORECASE),
+    re.compile(r'chevron-down', flags=re.IGNORECASE),
+    re.compile(r'chevron-up', flags=re.IGNORECASE),
+    re.compile(r'arrow-up-right', flags=re.IGNORECASE),
+    re.compile(r'arrow-down', flags=re.IGNORECASE),
+    re.compile(r'arrow-left', flags=re.IGNORECASE),
+    re.compile(r'arrow-right', flags=re.IGNORECASE),
+    re.compile(r'sparkleAsk', flags=re.IGNORECASE),
+    re.compile(r'hashtag', flags=re.IGNORECASE),
+    re.compile(r'house', flags=re.IGNORECASE),
+    re.compile(r'server', flags=re.IGNORECASE),
+    re.compile(r'cloud', flags=re.IGNORECASE),
+    re.compile(r'terminal', flags=re.IGNORECASE),
+    re.compile(r'users-between-lines', flags=re.IGNORECASE),
+]
+
+_UI_PATTERNS = [
+    re.compile(r'^Copy\s*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'^Copy as Markdown\s*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'^Back\s*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'Was this helpful\?.*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'^Table of contents\s*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'Open Markdown Ask Docs AI.*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'Open in Claude.*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'\[Edit this page\].*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'\[Request changes\].*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'\[Previous.*?\]\s*\[Next.*?\]', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'\]\\s\+/gm,.*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'copying = (true|false).*$', flags=re.MULTILINE | re.IGNORECASE),
+    re.compile(r'setTimeout\(.*?2000\);\s*$', flags=re.MULTILINE | re.IGNORECASE),
+]
+
+
 class ExtractedContent:
     """提取的页面内容"""
     def __init__(
@@ -117,7 +164,7 @@ def html_to_markdown(html_content: str) -> str:
     markdown = h.handle(html_content)
     
     # 清理多余空行
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    markdown = _MULTIPLE_NEWLINES_RE.sub('\n\n', markdown)
     
     return markdown.strip()
 
@@ -139,47 +186,12 @@ def clean_markdown(markdown: str) -> str:
         str: 清理后的Markdown
     """
     # 1. 清理图标字符（GitBook/SonarSource风格）
-    icon_patterns = [
-        r'chevron-right',
-        r'chevron-left',
-        r'chevron-down',
-        r'chevron-up',
-        r'arrow-up-right',
-        r'arrow-down',
-        r'arrow-left',
-        r'arrow-right',
-        r'sparkleAsk',
-        r'hashtag',
-        r'house',
-        r'server',
-        r'cloud',
-        r'terminal',
-        r'users-between-lines',
-    ]
-    for pattern in icon_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.IGNORECASE)
+    for pattern in _ICON_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2. 清理UI按钮文本
-    ui_patterns = [
-        r'^Copy\s*$',
-        r'^Copy as Markdown\s*$',
-        r'^Back\s*$',
-        r'Was this helpful\?.*$',
-        r'^Table of contents\s*$',
-        r'Open Markdown Ask Docs AI.*$',
-        r'Open in Claude.*$',
-        r'\[Edit this page\].*$',
-        r'\[Request changes\].*$',
-        # 页面底部导航
-        r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
-        r'\[Previous.*?\]\s*\[Next.*?\]',
-        # JS 碎片处理 (处理复制按钮残留)
-        r'\]\\s\+/gm,.*$', 
-        r'copying = (true|false).*$',
-        r'setTimeout\(.*?2000\);\s*$',
-    ]
-    for pattern in ui_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
+    for pattern in _UI_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2.1 修复常见编码问题（Windows-1252编码被误读为UTF-8）
     encoding_fixes = {
@@ -196,8 +208,8 @@ def clean_markdown(markdown: str) -> str:
         markdown = markdown.replace(wrong, right)
     
     # 3. 清理空的标题（### 后面没内容）
-    markdown = re.sub(r'^###\s*$', '', markdown, flags=re.MULTILINE)
-    markdown = re.sub(r'^##\s*$', '', markdown, flags=re.MULTILINE)
+    markdown = _EMPTY_H3_RE.sub('', markdown)
+    markdown = _EMPTY_H2_RE.sub('', markdown)
     
     # 4. 清理重复的主标题（连续两个相同的 # 标题）
     lines = markdown.split('\n')
@@ -213,7 +225,7 @@ def clean_markdown(markdown: str) -> str:
     markdown = '\n'.join(cleaned_lines)
     
     # 5. 清理导航面包屑行（如 [Home](...) / [Get started](...) / ...）
-    markdown = re.sub(r'^\s*\[Home\].*?/.*?/.*$', '', markdown, flags=re.MULTILINE)
+    markdown = _BREADCRUMB_RE.sub('', markdown)
     
     # 6. 清理开头的导航残留
     # 包括：纯链接列表、纯文本+链接列表（如Docker的侧边栏）
@@ -233,7 +245,7 @@ def clean_markdown(markdown: str) -> str:
         # 如果是标题行，从这里开始可能是正文
         if stripped.startswith('#'):
             # 但如果标题后面紧跟链接列表，可能还是导航
-            if i + 1 < len(lines) and re.match(r'^\s*\*\s*\[.*?\]', lines[i + 1].strip()):
+            if i + 1 < len(lines) and _HEADER_LINK_RE.match(lines[i + 1].strip()):
                 consecutive_nav_lines += 1
                 content_start = i + 1
                 continue
@@ -242,13 +254,13 @@ def clean_markdown(markdown: str) -> str:
             break
         
         # 如果是纯链接行或列表项链接
-        if re.match(r'^\s*\*?\s*\[.*?\]\(.*?\)\s*$', stripped):
+        if _NAV_LINK_RE.match(stripped):
             consecutive_nav_lines += 1
             content_start = i + 1
             continue
         
         # 如果是缩进的列表项（可能是子导航）
-        if re.match(r'^\s{2,}\*\s+', line):
+        if _INDENTED_LIST_RE.match(line):
             consecutive_nav_lines += 1
             content_start = i + 1
             continue
@@ -268,7 +280,7 @@ def clean_markdown(markdown: str) -> str:
         markdown = '\n'.join(lines[content_start:])
     
     # 7. 最终清理多余空行
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    markdown = _MULTIPLE_NEWLINES_RE.sub('\n\n', markdown)
     
     return markdown.strip()
 
