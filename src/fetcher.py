@@ -75,6 +75,21 @@ def fetch_with_requests(url: str, timeout: int = DEFAULT_TIMEOUT) -> FetchResult
         raise FetchError(f"请求失败: {url} - {str(e)}")
 
 
+_SCRIPT_PATTERN = re.compile(r'<script[^>]*>.*?</script>', flags=re.DOTALL | re.IGNORECASE)
+_STYLE_PATTERN = re.compile(r'<style[^>]*>.*?</style>', flags=re.DOTALL | re.IGNORECASE)
+_TAG_PATTERN = re.compile(r'<[^>]+>')
+
+_SPA_INDICATORS = frozenset([
+    'id="root"',
+    'id="app"',
+    'id="__next"',
+    'id="__nuxt"',
+    'data-reactroot',
+    'ng-app',
+    '__NEXT_DATA__',
+    '__NUXT__',
+])
+
 def is_js_rendered_page(html: str) -> bool:
     """
     检测页面是否需要JavaScript渲染
@@ -92,25 +107,15 @@ def is_js_rendered_page(html: str) -> bool:
     """
     # 检查是否有足够的文本内容
     # 移除script和style标签后检查
-    text_content = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
-    text_content = re.sub(r'<style[^>]*>.*?</style>', '', text_content, flags=re.DOTALL | re.IGNORECASE)
-    text_content = re.sub(r'<[^>]+>', '', text_content)
+    text_content = _SCRIPT_PATTERN.sub('', html)
+    text_content = _STYLE_PATTERN.sub('', text_content)
+    text_content = _TAG_PATTERN.sub('', text_content)
     text_content = text_content.strip()
     
     # 如果去除标签后文本太少，可能是SPA
     if len(text_content) < 500:
         # 检查是否有React/Vue等框架特征
-        spa_indicators = [
-            'id="root"',
-            'id="app"',
-            'id="__next"',
-            'id="__nuxt"',
-            'data-reactroot',
-            'ng-app',
-            '__NEXT_DATA__',
-            '__NUXT__',
-        ]
-        for indicator in spa_indicators:
+        for indicator in _SPA_INDICATORS:
             if indicator in html:
                 return True
     
