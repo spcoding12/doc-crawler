@@ -1,0 +1,3 @@
+## 2024-05-20 - HTML and Markdown processing overhead
+**Learning:** Instantiating `html2text.HTML2Text()` per function call inside an extraction loop creates a measurable performance bottleneck, however it is not thread-safe to reuse a single instance at the module level, so we must instantiate it per call. On the other hand, re-compiling multiple regex patterns per Markdown clean-up adds measurable performance loss and it is completely safe to pre-compile them.
+**Action:** Pre-compile regular expressions at the module level using `re.compile()` to avoid repeated compilation and list allocation overhead in string-processing functions like `clean_markdown`. Avoid sharing stateful objects like `HTML2Text` across threads.
