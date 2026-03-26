@@ -1,0 +1,3 @@
+## 2024-05-24 - Module-Level Regex Pre-compilation
+**Learning:** Pre-compiling multiple individual regular expressions using `re.compile()` at the module level is significantly faster than compiling them inline within a frequently called function. Furthermore, pre-compiling multiple individual regexes and iterating over them is actually faster (and simpler) than trying to combine them into a single large regex using the `|` (OR) operator, likely due to regex engine optimization limits on very large alternations.
+**Action:** When working with a list of regex patterns in a text-processing module like `extractor.py`, pre-compile them at the module level using a list comprehension (`[re.compile(p) for p in patterns]`) rather than combining them or compiling inline.
