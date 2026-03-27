@@ -26,22 +26,24 @@ class FrameworkInfo:
 
 def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docusaurus 框架"""
+    # Performance Optimization: Replaced CSS selectors with direct kwargs for soup.find_all
+    # to avoid the heavy CSS parsing overhead of soup.select
     indicators = [
         # Docusaurus v2/v3 特征
-        ('meta[name="generator"]', lambda tag: 'docusaurus' in tag.get('content', '').lower()),
-        ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
-        ('.theme-doc-sidebar-menu', lambda tag: True),
-        ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
+        ({'name': 'meta', 'attrs': {'name': 'generator'}}, lambda tag: 'docusaurus' in tag.get('content', '').lower()),
+        ({'name': 'html', 'attrs': {'data-theme': True}}, lambda tag: soup.find(class_='theme-doc-sidebar-container') is not None),
+        ({'class_': 'theme-doc-sidebar-menu'}, lambda tag: True),
+        ({'class_': 'docusaurus'}, lambda tag: True),
+        ({'name': 'script'}, lambda tag: 'docusaurus' in str(tag)),
     ]
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
+    for kwargs, check in indicators:
+        elements = soup.find_all(**kwargs)
         for el in elements:
             if check(el):
                 # 尝试获取版本
                 version = None
-                meta = soup.find('meta', {'name': 'generator'})
+                meta = soup.find('meta', attrs={'name': 'generator'})
                 if meta and 'docusaurus' in meta.get('content', '').lower():
                     version = meta.get('content')
                 return FrameworkInfo('docusaurus', version, confidence=0.9)
@@ -51,18 +53,19 @@ def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
 
 def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 VuePress 框架"""
+    # Performance Optimization: Replaced CSS selectors with direct kwargs for soup.find_all
     indicators = [
         # VuePress 1.x
-        ('.theme-default-content', lambda tag: True),
-        ('.sidebar-links', lambda tag: True),
+        ({'class_': 'theme-default-content'}, lambda tag: True),
+        ({'class_': 'sidebar-links'}, lambda tag: True),
         # VuePress 2.x / VitePress
-        ('.vp-doc', lambda tag: True),
-        ('.VPSidebar', lambda tag: True),
-        ('div[id="app"]', lambda tag: soup.find('div', class_='theme-container') is not None),
+        ({'class_': 'vp-doc'}, lambda tag: True),
+        ({'class_': 'VPSidebar'}, lambda tag: True),
+        ({'name': 'div', 'attrs': {'id': 'app'}}, lambda tag: soup.find(class_='theme-container') is not None),
     ]
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
+    for kwargs, check in indicators:
+        elements = soup.find_all(**kwargs)
         for el in elements:
             if check(el):
                 return FrameworkInfo('vuepress', confidence=0.85)
@@ -80,22 +83,23 @@ def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
 
 def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 MkDocs 框架"""
+    # Performance Optimization: Replaced CSS selectors with direct kwargs for soup.find_all
     indicators = [
         # Material for MkDocs
-        ('.md-content', lambda tag: True),
-        ('.md-sidebar', lambda tag: True),
-        ('.md-nav', lambda tag: True),
+        ({'class_': 'md-content'}, lambda tag: True),
+        ({'class_': 'md-sidebar'}, lambda tag: True),
+        ({'class_': 'md-nav'}, lambda tag: True),
         # 标准 MkDocs
-        ('meta[name="generator"]', lambda tag: 'mkdocs' in tag.get('content', '').lower()),
-        ('.wy-nav-content', lambda tag: True),  # ReadTheDocs theme
+        ({'name': 'meta', 'attrs': {'name': 'generator'}}, lambda tag: 'mkdocs' in tag.get('content', '').lower()),
+        ({'class_': 'wy-nav-content'}, lambda tag: True),  # ReadTheDocs theme
     ]
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
+    for kwargs, check in indicators:
+        elements = soup.find_all(**kwargs)
         for el in elements:
             if check(el):
                 version = None
-                meta = soup.find('meta', {'name': 'generator'})
+                meta = soup.find('meta', attrs={'name': 'generator'})
                 if meta and 'mkdocs' in meta.get('content', '').lower():
                     version = meta.get('content')
                 return FrameworkInfo('mkdocs', version, confidence=0.9)
@@ -105,16 +109,17 @@ def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
 
 def detect_gitbook(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 GitBook 框架"""
+    # Performance Optimization: Replaced CSS selectors with direct kwargs for soup.find_all
     indicators = [
         # GitBook 特征
-        ('.book-summary', lambda tag: True),
-        ('.page-inner', lambda tag: True),
-        ('.gitbook-root', lambda tag: True),
-        ('meta[name="generator"]', lambda tag: 'gitbook' in tag.get('content', '').lower()),
+        ({'class_': 'book-summary'}, lambda tag: True),
+        ({'class_': 'page-inner'}, lambda tag: True),
+        ({'class_': 'gitbook-root'}, lambda tag: True),
+        ({'name': 'meta', 'attrs': {'name': 'generator'}}, lambda tag: 'gitbook' in tag.get('content', '').lower()),
     ]
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
+    for kwargs, check in indicators:
+        elements = soup.find_all(**kwargs)
         for el in elements:
             if check(el):
                 return FrameworkInfo('gitbook', confidence=0.85)
@@ -135,8 +140,8 @@ def detect_docsify(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
         if 'docsify' in src.lower() or '$docsify' in text:
             return FrameworkInfo('docsify', confidence=0.9)
     
-    # 检查特征元素
-    if soup.select_one('.sidebar-toggle'):
+    # 检查特征元素 (Performance Optimization: Replaced select_one with find)
+    if soup.find(class_='sidebar-toggle'):
         body = soup.find('body')
         if body:
             body_class = ' '.join(body.get('class', []))
