@@ -1,0 +1,3 @@
+## 2024-05-24 - Pre-compiling Regex Array Patterns
+**Learning:** For replacing large arrays of string patterns using regular expressions (like icon patterns and UI cleanup), joining the arrays using the OR operator `|` to form a single regex pattern resulted in slower execution time (30.4s) than keeping them as a pre-compiled array of individual regex objects and iterating through them (20.7s) in this codebase.
+**Action:** When refactoring multiple individual pattern strings, pre-compile them into a list of regex objects at the module level instead of joining them into a single massive regular expression, unless profiling proves the OR pattern is specifically faster.
