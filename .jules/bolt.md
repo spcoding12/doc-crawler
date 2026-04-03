@@ -1,0 +1,3 @@
+## 2024-04-03 - BeautifulSoup Performance: .find vs .select
+**Learning:** In heavily repeated document processing tasks (like framework detection per URL), BeautifulSoup's `soup.select()` CSS selector parsing (via SoupSieve) introduces massive overhead. Replacing loop-based `.select()` iterations with direct `.find()` DOM traversal and short-circuit boolean checks reduced execution time by roughly 4x.
+**Action:** Always favor native `.find()` or `.find_all()` over `.select()` when performance is a priority. Capture the result of `.find()` in a variable if the element's content or attributes are needed, rather than checking for existence and querying the DOM again.
