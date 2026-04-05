@@ -1,0 +1,3 @@
+## 2024-05-20 - [BeautifulSoup Query Optimization]
+**Learning:** Extracting data with BeautifulSoup using `.select()` with CSS selectors adds significant overhead compared to `.find()` and `.find_all()` with direct attribute lookups. Furthermore, consolidating multiple independent class checks into a single-pass operation by passing a list to the class parameter (e.g., `soup.find(class_=['class1', 'class2', ...])`) acts as an optimized OR check that traverses the DOM tree exactly once.
+**Action:** When working with BeautifulSoup on performance-critical paths, prefer `.find()` and `.find_all()` over `.select()`. For multiple candidate checks, use lists for class names or lambda functions for complex attributes to minimize DOM traversals.
