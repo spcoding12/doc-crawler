@@ -122,24 +122,9 @@ def html_to_markdown(html_content: str) -> str:
     return markdown.strip()
 
 
-def clean_markdown(markdown: str) -> str:
-    """
-    清理Markdown内容中的噪音
-    
-    处理：
-    - 图标/特殊字符（chevron-right, arrow-up-right等）
-    - UI元素（Copy, Was this helpful等）
-    - 重复标题
-    - 导航面包屑
-    
-    Args:
-        markdown: 原始Markdown
-    
-    Returns:
-        str: 清理后的Markdown
-    """
-    # 1. 清理图标字符（GitBook/SonarSource风格）
-    icon_patterns = [
+# 预编译清理Markdown噪音的正则表达式（优化性能）
+_ICON_PATTERNS = [
+    re.compile(p, flags=re.IGNORECASE) for p in [
         r'chevron-right',
         r'chevron-left',
         r'chevron-down',
@@ -156,11 +141,10 @@ def clean_markdown(markdown: str) -> str:
         r'terminal',
         r'users-between-lines',
     ]
-    for pattern in icon_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.IGNORECASE)
-    
-    # 2. 清理UI按钮文本
-    ui_patterns = [
+]
+
+_UI_PATTERNS = [
+    re.compile(p, flags=re.MULTILINE | re.IGNORECASE) for p in [
         r'^Copy\s*$',
         r'^Copy as Markdown\s*$',
         r'^Back\s*$',
@@ -178,8 +162,36 @@ def clean_markdown(markdown: str) -> str:
         r'copying = (true|false).*$',
         r'setTimeout\(.*?2000\);\s*$',
     ]
-    for pattern in ui_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
+]
+
+_EMPTY_H3_PATTERN = re.compile(r'^###\s*$', flags=re.MULTILINE)
+_EMPTY_H2_PATTERN = re.compile(r'^##\s*$', flags=re.MULTILINE)
+_BREADCRUMB_PATTERN = re.compile(r'^\s*\[Home\].*?/.*?/.*$', flags=re.MULTILINE)
+_MULTIPLE_NEWLINES_PATTERN = re.compile(r'\n{3,}')
+
+def clean_markdown(markdown: str) -> str:
+    """
+    清理Markdown内容中的噪音
+
+    处理：
+    - 图标/特殊字符（chevron-right, arrow-up-right等）
+    - UI元素（Copy, Was this helpful等）
+    - 重复标题
+    - 导航面包屑
+
+    Args:
+        markdown: 原始Markdown
+
+    Returns:
+        str: 清理后的Markdown
+    """
+    # 1. 清理图标字符（GitBook/SonarSource风格）
+    for pattern in _ICON_PATTERNS:
+        markdown = pattern.sub('', markdown)
+
+    # 2. 清理UI按钮文本
+    for pattern in _UI_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2.1 修复常见编码问题（Windows-1252编码被误读为UTF-8）
     encoding_fixes = {
@@ -196,8 +208,8 @@ def clean_markdown(markdown: str) -> str:
         markdown = markdown.replace(wrong, right)
     
     # 3. 清理空的标题（### 后面没内容）
-    markdown = re.sub(r'^###\s*$', '', markdown, flags=re.MULTILINE)
-    markdown = re.sub(r'^##\s*$', '', markdown, flags=re.MULTILINE)
+    markdown = _EMPTY_H3_PATTERN.sub('', markdown)
+    markdown = _EMPTY_H2_PATTERN.sub('', markdown)
     
     # 4. 清理重复的主标题（连续两个相同的 # 标题）
     lines = markdown.split('\n')
@@ -213,7 +225,7 @@ def clean_markdown(markdown: str) -> str:
     markdown = '\n'.join(cleaned_lines)
     
     # 5. 清理导航面包屑行（如 [Home](...) / [Get started](...) / ...）
-    markdown = re.sub(r'^\s*\[Home\].*?/.*?/.*$', '', markdown, flags=re.MULTILINE)
+    markdown = _BREADCRUMB_PATTERN.sub('', markdown)
     
     # 6. 清理开头的导航残留
     # 包括：纯链接列表、纯文本+链接列表（如Docker的侧边栏）
@@ -268,7 +280,7 @@ def clean_markdown(markdown: str) -> str:
         markdown = '\n'.join(lines[content_start:])
     
     # 7. 最终清理多余空行
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    markdown = _MULTIPLE_NEWLINES_PATTERN.sub('\n\n', markdown)
     
     return markdown.strip()
 
