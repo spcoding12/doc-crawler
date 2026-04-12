@@ -13,6 +13,44 @@ from readability import Document
 from typing import Optional
 import re
 
+# 预编译正则模式，避免每次调用 clean_markdown 时重复编译
+COMPILED_ICON_PATTERNS = [re.compile(p, re.IGNORECASE) for p in [
+    r'chevron-right',
+    r'chevron-left',
+    r'chevron-down',
+    r'chevron-up',
+    r'arrow-up-right',
+    r'arrow-down',
+    r'arrow-left',
+    r'arrow-right',
+    r'sparkleAsk',
+    r'hashtag',
+    r'house',
+    r'server',
+    r'cloud',
+    r'terminal',
+    r'users-between-lines',
+]]
+
+COMPILED_UI_PATTERNS = [re.compile(p, re.MULTILINE | re.IGNORECASE) for p in [
+    r'^Copy\s*$',
+    r'^Copy as Markdown\s*$',
+    r'^Back\s*$',
+    r'Was this helpful\?.*$',
+    r'^Table of contents\s*$',
+    r'Open Markdown Ask Docs AI.*$',
+    r'Open in Claude.*$',
+    r'\[Edit this page\].*$',
+    r'\[Request changes\].*$',
+    # 页面底部导航
+    r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
+    r'\[Previous.*?\]\s*\[Next.*?\]',
+    # JS 碎片处理 (处理复制按钮残留)
+    r'\]\\s\+/gm,.*$',
+    r'copying = (true|false).*$',
+    r'setTimeout\(.*?2000\);\s*$',
+]]
+
 from .frameworks import (
     FrameworkAdapter,
     DocusaurusAdapter,
@@ -139,47 +177,12 @@ def clean_markdown(markdown: str) -> str:
         str: 清理后的Markdown
     """
     # 1. 清理图标字符（GitBook/SonarSource风格）
-    icon_patterns = [
-        r'chevron-right',
-        r'chevron-left',
-        r'chevron-down',
-        r'chevron-up',
-        r'arrow-up-right',
-        r'arrow-down',
-        r'arrow-left',
-        r'arrow-right',
-        r'sparkleAsk',
-        r'hashtag',
-        r'house',
-        r'server',
-        r'cloud',
-        r'terminal',
-        r'users-between-lines',
-    ]
-    for pattern in icon_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.IGNORECASE)
+    for pattern in COMPILED_ICON_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2. 清理UI按钮文本
-    ui_patterns = [
-        r'^Copy\s*$',
-        r'^Copy as Markdown\s*$',
-        r'^Back\s*$',
-        r'Was this helpful\?.*$',
-        r'^Table of contents\s*$',
-        r'Open Markdown Ask Docs AI.*$',
-        r'Open in Claude.*$',
-        r'\[Edit this page\].*$',
-        r'\[Request changes\].*$',
-        # 页面底部导航
-        r'\[Previous.*?\]\s*\(/.*?\)\s*\[Next.*?\]\s*\(/.*?\)',
-        r'\[Previous.*?\]\s*\[Next.*?\]',
-        # JS 碎片处理 (处理复制按钮残留)
-        r'\]\\s\+/gm,.*$', 
-        r'copying = (true|false).*$',
-        r'setTimeout\(.*?2000\);\s*$',
-    ]
-    for pattern in ui_patterns:
-        markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
+    for pattern in COMPILED_UI_PATTERNS:
+        markdown = pattern.sub('', markdown)
     
     # 2.1 修复常见编码问题（Windows-1252编码被误读为UTF-8）
     encoding_fixes = {
