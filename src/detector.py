@@ -26,46 +26,41 @@ class FrameworkInfo:
 
 def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docusaurus 框架"""
-    indicators = [
-        # Docusaurus v2/v3 特征
-        ('meta[name="generator"]', lambda tag: 'docusaurus' in tag.get('content', '').lower()),
-        ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
-        ('.theme-doc-sidebar-menu', lambda tag: True),
-        ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
-    ]
+    is_docusaurus = False
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                # 尝试获取版本
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'docusaurus' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('docusaurus', version, confidence=0.9)
+    if soup.find(class_=['theme-doc-sidebar-menu', 'docusaurus']):
+        is_docusaurus = True
+    elif soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'docusaurus' in c.lower()}):
+        is_docusaurus = True
+    else:
+        html_tag = soup.find('html')
+        if html_tag and html_tag.has_attr('data-theme') and soup.find('div', class_='theme-doc-sidebar-container'):
+            is_docusaurus = True
+        else:
+            for script in soup.find_all('script'):
+                if 'docusaurus' in str(script).lower():
+                    is_docusaurus = True
+                    break
+
+    if is_docusaurus:
+        version = None
+        meta = soup.find('meta', {'name': 'generator'})
+        if meta and 'docusaurus' in meta.get('content', '').lower():
+            version = meta.get('content')
+        return FrameworkInfo('docusaurus', version, confidence=0.9)
     
     return None
 
 
 def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 VuePress 框架"""
-    indicators = [
-        # VuePress 1.x
-        ('.theme-default-content', lambda tag: True),
-        ('.sidebar-links', lambda tag: True),
-        # VuePress 2.x / VitePress
-        ('.vp-doc', lambda tag: True),
-        ('.VPSidebar', lambda tag: True),
-        ('div[id="app"]', lambda tag: soup.find('div', class_='theme-container') is not None),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('vuepress', confidence=0.85)
+    # VuePress 1.x and 2.x / VitePress
+    if soup.find(class_=['theme-default-content', 'sidebar-links', 'vp-doc', 'VPSidebar']):
+        return FrameworkInfo('vuepress', confidence=0.85)
+
+    app_div = soup.find('div', id='app')
+    if app_div and soup.find('div', class_='theme-container'):
+        return FrameworkInfo('vuepress', confidence=0.85)
     
     # 检查是否有 VuePress 特有的脚本
     scripts = soup.find_all('script')
@@ -80,44 +75,30 @@ def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
 
 def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 MkDocs 框架"""
-    indicators = [
-        # Material for MkDocs
-        ('.md-content', lambda tag: True),
-        ('.md-sidebar', lambda tag: True),
-        ('.md-nav', lambda tag: True),
-        # 标准 MkDocs
-        ('meta[name="generator"]', lambda tag: 'mkdocs' in tag.get('content', '').lower()),
-        ('.wy-nav-content', lambda tag: True),  # ReadTheDocs theme
-    ]
+    is_mkdocs = False
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'mkdocs' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('mkdocs', version, confidence=0.9)
+    if soup.find(class_=['md-content', 'md-sidebar', 'md-nav', 'wy-nav-content']):
+        is_mkdocs = True
+    elif soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'mkdocs' in c.lower()}):
+        is_mkdocs = True
+
+    if is_mkdocs:
+        version = None
+        meta = soup.find('meta', {'name': 'generator'})
+        if meta and 'mkdocs' in meta.get('content', '').lower():
+            version = meta.get('content')
+        return FrameworkInfo('mkdocs', version, confidence=0.9)
     
     return None
 
 
 def detect_gitbook(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 GitBook 框架"""
-    indicators = [
-        # GitBook 特征
-        ('.book-summary', lambda tag: True),
-        ('.page-inner', lambda tag: True),
-        ('.gitbook-root', lambda tag: True),
-        ('meta[name="generator"]', lambda tag: 'gitbook' in tag.get('content', '').lower()),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('gitbook', confidence=0.85)
+    if soup.find(class_=['book-summary', 'page-inner', 'gitbook-root']):
+        return FrameworkInfo('gitbook', confidence=0.85)
+
+    if soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'gitbook' in c.lower()}):
+        return FrameworkInfo('gitbook', confidence=0.85)
     
     # 检查链接特征
     if soup.find('link', href=lambda x: x and 'gitbook' in x.lower()):

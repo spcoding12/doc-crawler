@@ -1,0 +1,3 @@
+## 2024-04-14 - Optimize HTML parsing by replacing select with find
+**Learning:** In BeautifulSoup, using `soup.select()` combined with CSS selectors is significantly slower than using native methods like `soup.find()` or `soup.find_all()`. Benchmarks showed that evaluating multiple class selectors individually via `.select()` scales poorly compared to consolidating them into a single `soup.find(class_=[...])` call, which acts as a logical OR and traverses the DOM only once.
+**Action:** Always prefer native `.find()` or `.find_all()` with direct attribute lookups (using lambdas for complex matches) over `.select()` when performance is a concern.
