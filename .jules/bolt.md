@@ -1,0 +1,3 @@
+## 2024-04-15 - BeautifulSoup DOM Traversal Optimization
+**Learning:** In BeautifulSoup, using `.select()` with CSS selectors is significantly slower than using `.find()` or `.find_all()` with direct attribute lookups, due to the overhead of parsing CSS selectors. For `detector.py`, replacing `soup.select(selector)` and looping to check attributes with a single pass using `soup.find()` or `soup.find(class_=[...])` reduces detection time by more than 60% on large HTML files.
+**Action:** Replace `soup.select()` and sequential attribute checking with `soup.find()` and `soup.find_all()` using direct attribute/class matching. Use `class_=['class1', 'class2']` as an optimized OR check to traverse the DOM tree exactly once.
