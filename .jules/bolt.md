@@ -1,0 +1,3 @@
+## 2025-05-18 - BeautifulSoup DOM Traversal Optimization
+**Learning:** In BeautifulSoup, using `soup.select()` to query elements by CSS selector is significantly slower than using `soup.find()` or `soup.find_all()`. For example, in framework detection, compiling and evaluating CSS selectors inside loops introduced severe overhead. Passing a list of classes to the `class_` argument in `.find()` or `.find_all()` performs an optimized OR check that traverses the DOM tree exactly once, making it vastly superior for performance.
+**Action:** Always prefer `.find()` or `.find_all()` with direct attribute/class lookups over `.select()` when performance matters. Use lists for the `class_` parameter to avoid multiple independent element checks.
