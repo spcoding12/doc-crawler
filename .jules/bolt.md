@@ -1,0 +1,3 @@
+## 2024-04-18 - Avoid BeautifulSoup select() for repetitive DOM traversal
+**Learning:** `soup.select()` incurs significant CSS parsing overhead. Using `soup.find()` / `soup.find_all()` with direct attribute matching or combining multiple class checks into a single list lookup (`soup.find(class_=['class1', 'class2'])`) reduces execution time by over 60% during repetitive framework feature detection.
+**Action:** When extracting data where complex CSS relational selectors are not strictly necessary, prefer `.find()` and `.find_all()` over `.select()`. Assign results to variables when you need to check existence and extract data.

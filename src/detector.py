@@ -26,46 +26,39 @@ class FrameworkInfo:
 
 def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docusaurus 框架"""
-    indicators = [
-        # Docusaurus v2/v3 特征
-        ('meta[name="generator"]', lambda tag: 'docusaurus' in tag.get('content', '').lower()),
-        ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
-        ('.theme-doc-sidebar-menu', lambda tag: True),
-        ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                # 尝试获取版本
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'docusaurus' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('docusaurus', version, confidence=0.9)
-    
+    # ⚡ Bolt Optimization: Use .find instead of .select for performance
+    # Docusaurus v2/v3 特征
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and 'docusaurus' in meta.get('content', '').lower():
+        return FrameworkInfo('docusaurus', meta.get('content'), confidence=0.9)
+
+    html_tags = soup.find_all('html')
+    for tag in html_tags:
+        if tag.has_attr('data-theme'):
+            if soup.find('div', class_='theme-doc-sidebar-container'):
+                return FrameworkInfo('docusaurus', confidence=0.9)
+
+    if soup.find(class_=['theme-doc-sidebar-menu', 'docusaurus']):
+        return FrameworkInfo('docusaurus', confidence=0.9)
+
+    scripts = soup.find_all('script')
+    for script in scripts:
+        if 'docusaurus' in str(script):
+            return FrameworkInfo('docusaurus', confidence=0.9)
+
     return None
 
 
 def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 VuePress 框架"""
-    indicators = [
-        # VuePress 1.x
-        ('.theme-default-content', lambda tag: True),
-        ('.sidebar-links', lambda tag: True),
-        # VuePress 2.x / VitePress
-        ('.vp-doc', lambda tag: True),
-        ('.VPSidebar', lambda tag: True),
-        ('div[id="app"]', lambda tag: soup.find('div', class_='theme-container') is not None),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('vuepress', confidence=0.85)
+    # ⚡ Bolt Optimization: Combine class checks
+    # VuePress 1.x & 2.x / VitePress
+    if soup.find(class_=['theme-default-content', 'sidebar-links', 'vp-doc', 'VPSidebar']):
+        return FrameworkInfo('vuepress', confidence=0.85)
+
+    app_div = soup.find('div', id='app')
+    if app_div and soup.find('div', class_='theme-container'):
+        return FrameworkInfo('vuepress', confidence=0.85)
     
     # 检查是否有 VuePress 特有的脚本
     scripts = soup.find_all('script')
@@ -80,44 +73,31 @@ def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
 
 def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 MkDocs 框架"""
-    indicators = [
-        # Material for MkDocs
-        ('.md-content', lambda tag: True),
-        ('.md-sidebar', lambda tag: True),
-        ('.md-nav', lambda tag: True),
-        # 标准 MkDocs
-        ('meta[name="generator"]', lambda tag: 'mkdocs' in tag.get('content', '').lower()),
-        ('.wy-nav-content', lambda tag: True),  # ReadTheDocs theme
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'mkdocs' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('mkdocs', version, confidence=0.9)
-    
+    # ⚡ Bolt Optimization: Combine class checks
+    # Material for MkDocs & ReadTheDocs theme
+    if soup.find(class_=['md-content', 'md-sidebar', 'md-nav', 'wy-nav-content']):
+        meta = soup.find('meta', attrs={'name': 'generator'})
+        version = meta.get('content') if meta and 'mkdocs' in meta.get('content', '').lower() else None
+        return FrameworkInfo('mkdocs', version, confidence=0.9)
+
+    # 标准 MkDocs
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and 'mkdocs' in meta.get('content', '').lower():
+        return FrameworkInfo('mkdocs', meta.get('content'), confidence=0.9)
+
     return None
 
 
 def detect_gitbook(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 GitBook 框架"""
-    indicators = [
-        # GitBook 特征
-        ('.book-summary', lambda tag: True),
-        ('.page-inner', lambda tag: True),
-        ('.gitbook-root', lambda tag: True),
-        ('meta[name="generator"]', lambda tag: 'gitbook' in tag.get('content', '').lower()),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('gitbook', confidence=0.85)
+    # ⚡ Bolt Optimization: Combine class checks
+    # GitBook 特征
+    if soup.find(class_=['book-summary', 'page-inner', 'gitbook-root']):
+        return FrameworkInfo('gitbook', confidence=0.85)
+
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and 'gitbook' in meta.get('content', '').lower():
+        return FrameworkInfo('gitbook', confidence=0.85)
     
     # 检查链接特征
     if soup.find('link', href=lambda x: x and 'gitbook' in x.lower()):
