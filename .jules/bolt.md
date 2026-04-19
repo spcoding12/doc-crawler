@@ -1,0 +1,3 @@
+## 2025-05-18 - Optimized BeautifulSoup `select` vs `find`/`find_all` in framework detection
+**Learning:** Using `soup.select` with CSS selectors is significantly slower than using `soup.find`/`soup.find_all` with direct attribute lookups, especially on large DOMs. Furthermore, `soup.find(class_=['class1', 'class2'])` acts as an optimized single-pass OR search that traverses the DOM tree exactly once, compared to multiple separate checks.
+**Action:** Replace `soup.select` patterns in `src/detector.py` with `soup.find` or `soup.find_all`, combining class checks where applicable to reduce DOM traversal overhead.
