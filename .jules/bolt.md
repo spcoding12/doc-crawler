@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize BeautifulSoup selection over iterative list comprehensions]
+**Learning:** `soup.select()` invokes the CSS parsing engine which incurs a noticeable overhead compared to directly using `soup.find()` or `soup.find_all()`. Additionally, providing a list of classes to the `class_` argument in `find()` evaluates as a multiple-class lookup traversing the DOM only once, which is drastically faster than individually calling `.select()` for different classes in a loop.
+**Action:** Always prefer `.find()` / `.find_all()` over `.select()` when doing basic tag, class, or attribute lookups. Combine sequential `class_` checks into a single `.find(class_=['classA', 'classB'])` pass to avoid redundant DOM traversals.
