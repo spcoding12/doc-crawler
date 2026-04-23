@@ -286,7 +286,8 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # 传递已检测到的 framework，避免在每个页面都重复解析DOM以检测框架
+                content = extract_content(page_result.html, url, framework=framework.name)
                 
                 # 处理图片
                 markdown = content.markdown
