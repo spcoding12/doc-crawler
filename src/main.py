@@ -286,7 +286,8 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # Pass the detected framework name to avoid redundant framework detection overhead for each page
+                content = extract_content(page_result.html, url, framework=adapter.name)
                 
                 # 处理图片
                 markdown = content.markdown
