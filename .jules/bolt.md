@@ -1,0 +1,3 @@
+## 2025-04-26 - Avoid Redundant DOM Parsing in Page Processing
+**Learning:** In a multi-page crawler architecture, globally detected contexts (like the documentation framework type) should be passed down to page-level processors. Not doing so causes the `extract_content` function to re-run full framework detection (which instantiates `BeautifulSoup` and evaluates multiple complex CSS selectors) on every single page, creating a massive CPU bottleneck.
+**Action:** Always check if expensive context-gathering operations performed at the root level can be cached or passed as parameters to avoid redundant processing in loops over large datasets.
