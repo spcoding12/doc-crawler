@@ -1,0 +1,3 @@
+## 2024-05-01 - Prevent redundant DOM tree parsing in page extractors
+**Learning:** In a multi-page crawler architecture, if a global context (like the detected framework) is known, it must be passed down to page-level extractors. Failing to do so causes the extractor to re-parse the DOM tree (e.g., `BeautifulSoup(html, 'lxml')`) and run heuristic detection logic redundantly on every single page, resulting in massive overhead.
+**Action:** Always pass globally detected context variables (such as framework names) down to individual page processing functions to skip expensive redundant initializations or DOM tree parsing.
