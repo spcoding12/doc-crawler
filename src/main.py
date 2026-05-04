@@ -286,7 +286,9 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # 传入已知框架名称，避免在每个页面重复进行昂贵的DOM解析和框架检测
+                # Pass known framework name to avoid redundant expensive DOM parsing and framework detection on every page
+                content = extract_content(page_result.html, url, framework=getattr(adapter, 'name', 'generic'))
                 
                 # 处理图片
                 markdown = content.markdown

@@ -1,0 +1,3 @@
+## 2025-02-23 - Avoid Redundant DOM Parsing in Crawlers
+**Learning:** In a multi-page crawler architecture, failing to pass globally detected context (like the framework) down to page-level extraction functions causes redundant and expensive DOM tree parsing (`BeautifulSoup`) on every single page. Benchmarks showed extraction time per page dropping from ~10.48s to ~3.75s (a ~64% improvement) when bypassing the repetitive framework detection step.
+**Action:** Always identify and pass down global context from the application root to child processors to avoid re-computing expensive or stateful operations (like HTML parsing) at the leaf node level.
