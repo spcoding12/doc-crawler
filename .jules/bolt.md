@@ -1,0 +1,3 @@
+## 2024-05-10 - Redundant DOM Parsing in Page Crawling
+**Learning:** In a multi-page crawler, recalculating the page framework using a full DOM parse (`BeautifulSoup(html, 'lxml')`) on every single page within the main extraction loop is a massive bottleneck. The framework is typically homogeneous across a site and determined during the initial scan.
+**Action:** Pass globally established context (like the framework name) down to the `extract_content` function for all discovered pages to bypass redundant parsing. Always check if utility functions accept context arguments before assuming they need to rebuild it from scratch.
