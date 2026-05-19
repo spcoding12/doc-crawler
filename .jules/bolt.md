@@ -1,0 +1,3 @@
+## 2024-05-24 - Bypass redundant framework detection on page level
+**Learning:** In a multi-page crawler architecture, framework detection involves parsing the entire HTML DOM with BeautifulSoup. Doing this on every page when the framework is already known globally is a severe bottleneck. `extract_content` natively accepts a `framework` argument to skip this.
+**Action:** Pass the globally detected context (`adapter.name`) down to page-level extractors to prevent redundant DOM parsing.
