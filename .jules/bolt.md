@@ -1,0 +1,3 @@
+## 2024-05-23 - BeautifulSoup CSS Selector Parsing Overhead
+**Learning:** In BeautifulSoup, using CSS selectors via `soup.select()` is significantly slower than using native DOM traversal methods like `soup.find()` and `soup.find_all()`. Passing an array of classes to `class_` (e.g., `soup.find(class_=['c1', 'c2'])`) acts as a highly optimized, short-circuiting OR condition that traverses the tree exactly once.
+**Action:** When evaluating simple DOM elements for existence or specific attributes, prefer `find`/`find_all` with direct attribute lookups or `attrs` with lambda functions over `.select()` loops to eliminate parsing overhead.
