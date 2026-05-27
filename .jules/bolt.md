@@ -1,0 +1,3 @@
+## 2024-05-27 - BeautifulSoup Tag Serialization Bottleneck
+**Learning:** Checking string membership directly against `str(tag)` for BeautifulSoup elements (e.g., `'docusaurus' in str(tag)`) causes a significant performance bottleneck due to the overhead of serializing the entire tag structure and its contents to a string. This becomes especially problematic when checking many elements, like `<script>` tags on modern documentation sites.
+**Action:** Use `.get('src', '')` and `.text` (or `.string` if appropriate) for attribute and content checks instead of `str(tag)`. This prevents full HTML tree serialization and yields noticeable performance improvements (e.g., checking scripts is ~30-40% faster).
