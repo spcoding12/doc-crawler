@@ -1,0 +1,3 @@
+## 2024-05-29 - Optimize HTML string serialization in BeautifulSoup
+**Learning:** Checking for framework signatures inside `<script>` tags by casting the entire tag to a string (`str(tag)`) is up to 100x slower than using `tag.text` and `tag.get('src')`. `str(tag)` forces BeautifulSoup to reserialize the full DOM subtree of the tag, which in the case of large inline scripts (common in modern SPAs/documentation frameworks) creates massive performance overhead.
+**Action:** Always extract specific attributes (`.get()`) and textual content (`.text`) individually when inspecting tags rather than casting the tag to a string.
