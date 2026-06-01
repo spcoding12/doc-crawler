@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimizing BeautifulSoup parsing by replacing .select() and .string
+**Learning:** In BeautifulSoup, using `.select()` with CSS selectors involves significant overhead to parse the selector string and walk the entire DOM repeatedly, especially compared to direct `.find()` or `.find_all()` with attribute matching. Additionally, `.string` or `str(tag)` for text extraction serializes the whole tag or returns `None` for tags with multiple children, which is much slower and less robust than using `.text`.
+**Action:** Replace `.select()` with `.find(class_=[...])` for single-pass multi-class checks and use direct attribute lookups. Replace `.string` and `str(tag)` with `.text` when extracting text from tags like `<script>`.
