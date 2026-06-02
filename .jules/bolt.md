@@ -1,0 +1,3 @@
+## 2024-06-02 - BeautifulSoup str(tag) vs .text Performance Anti-Pattern
+**Learning:** Using `str(tag)` in BeautifulSoup to check for the existence of a string within an entire tag (including its inner text and attributes) is extremely slow (~100x overhead) because it forces full tag serialization. However, replacing it solely with `.text` is unsafe and can introduce regressions, because `.text` only extracts the inner node text and omits HTML attributes (like `src`).
+**Action:** When optimizing away `str(tag)` for string searches, you must explicitly search both `.text` and target attributes separately (e.g., `'docusaurus' in script.get('src', '').lower() or 'docusaurus' in script.text.lower()`) to maintain correctness while still achieving the performance gain.
