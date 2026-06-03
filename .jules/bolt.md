@@ -1,0 +1,3 @@
+## 2024-06-03 - Avoid Redundant Framework Detection on Every Page
+**Learning:** In a multi-page crawler architecture, `extract_content` performs a full `BeautifulSoup` parsing to detect the framework on *every single page* if the framework is not explicitly provided. This is extremely redundant since the framework is already detected on the first page and applies to the entire site.
+**Action:** Pass the globally detected `adapter.name` context down to page-level extractors (`extract_content(..., framework=adapter.name)`) to prevent redundant DOM tree parsing and significantly improve crawl speed.
