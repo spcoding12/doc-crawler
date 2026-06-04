@@ -1,0 +1,3 @@
+## 2024-06-04 - Optimize BeautifulSoup queries in detector.py
+**Learning:** Using `soup.select()` with CSS selectors introduces massive overhead for framework detection. Replacing `.select()` with targeted `.find()` and `.find_all()`, especially utilizing list-based class matching (`class_=['a', 'b']`), drastically reduces DOM traversal time, bringing down worst-case framework detection from ~1.1s to ~0.3s.
+**Action:** Always prefer direct attribute lookups and multi-class `.find()` over `.select()` when parsing large HTML files. Ensure specific data extractions (like version details) are executed before generic fallback checks.
