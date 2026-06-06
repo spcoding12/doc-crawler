@@ -1,0 +1,7 @@
+## 2024-06-06 - Pass Global Framework to Bypass Redundant DOM Evaluation
+**Learning:** In a multi-page crawler architecture, `extract_content` inside `main.py` was being called for every page without passing the framework name. This triggered `detect_framework(html)` internally, which constructs a full `BeautifulSoup` DOM tree and evaluates numerous regex/CSS selectors on every page. This is redundant because the framework is already detected globally at the start of the crawl.
+**Action:** Pass the globally detected `framework.name` to `extract_content(..., framework=framework.name)` in `main.py` to prevent redundant and expensive DOM tree parsing.
+
+## 2024-06-06 - Anti-pattern: Stringifying BeautifulSoup Trees for Regex
+**Learning:** An attempt was made to optimize `extract_images` by replacing `soup.find_all('img')` with a pre-compiled regex. However, since the function receives an already-parsed `BeautifulSoup` DOM tree, doing `str(soup)` to feed the regex forces Python to serialize the entire tree back into a string. This is a severe performance regression and takes significantly longer than traversing the existing tree. Also, parsing HTML with simple regex is brittle and error-prone.
+**Action:** Retain `soup.find_all('img')` when the input is already a BeautifulSoup object. Use regex for text extraction ONLY when operating on raw HTML strings before parsing, and avoid `str(soup)` entirely.
