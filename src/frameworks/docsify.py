@@ -34,13 +34,13 @@ class DocsifyAdapter(FrameworkAdapter):
         # 检查 script 标签中是否引用了 docsify
         for script in soup.find_all('script'):
             src = script.get('src', '')
-            text = script.string or ''
+            text = script.text
             if 'docsify' in src.lower() or 'docsify' in text.lower():
                 return True
         
         # 检查 window.$docsify 配置
         for script in soup.find_all('script'):
-            text = script.string or ''
+            text = script.text
             if '$docsify' in text or 'window.docsify' in text.lower():
                 return True
         

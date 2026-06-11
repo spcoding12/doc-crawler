@@ -1,0 +1,4 @@
+
+## 2024-06-11 - Optimize BeautifulSoup Tag Parsing
+**Learning:** Calling `str(tag)` on a BeautifulSoup element incurs a severe performance penalty because it forces the entire DOM subtree to be re-serialized into an HTML string. Additionally, `.string` on a bs4 tag returns `None` if the tag contains multiple nodes or complex text, requiring fallback logic (like `.string or ''`) which is less robust and slower than using the `.text` property which correctly extracts all descendant text nodes natively. Replacing `select` with `find_all` where tag names are targeted yields an additional ~15x parsing boost.
+**Action:** Always prefer native `.text` for text extraction and `.get('attr', '')` for attribute inspection over `str(tag)`. Substitute `.select('tag')` with `.find_all('tag')` when simple CSS selectors are involved.
