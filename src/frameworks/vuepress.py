@@ -57,8 +57,9 @@ class VuePressAdapter(FrameworkAdapter):
         
         # 检查脚本
         for script in soup.find_all('script'):
-            src = script.get('src', '') + (script.string or '')
-            if 'vuepress' in src.lower() or 'vitepress' in src.lower():
+            src = script.get('src', '').lower()
+            text = script.text.lower()
+            if 'vuepress' in src or 'vitepress' in src or 'vuepress' in text or 'vitepress' in text:
                 return True
         
         return False

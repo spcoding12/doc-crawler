@@ -52,7 +52,7 @@ class DocusaurusAdapter(FrameworkAdapter):
         
         # 检查脚本中是否包含 docusaurus
         for script in soup.find_all('script'):
-            if 'docusaurus' in (script.get('src', '') + (script.string or '')).lower():
+            if 'docusaurus' in script.get('src', '').lower() or 'docusaurus' in script.text.lower():
                 return True
         
         return False
