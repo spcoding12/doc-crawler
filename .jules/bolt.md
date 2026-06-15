@@ -1,0 +1,3 @@
+## 2024-05-23 - BeautifulSoup parsing optimization in detection logic
+**Learning:** Using `soup.select` with CSS selectors and stringifying tags with `str(tag)` for regex/string matching is significantly slower than using native `soup.find()` / `soup.find_all()` with attribute matching and `tag.text`.
+**Action:** Always prefer native bs4 traversal methods (`find`, `find_all`) with attribute dictionaries or lambda functions over CSS selectors (`select`) in hot paths like document framework detection. Use `tag.text` instead of `str(tag)` or `tag.string` when checking text content to avoid serialization overhead.
