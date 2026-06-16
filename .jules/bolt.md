@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize BeautifulSoup Traversal in Framework Detection]
+**Learning:** `soup.select()` incurs significant performance overhead compared to direct `soup.find_all(class_=[...])` lookups. Furthermore, invoking `str(tag)` on `<script>` tags causes massive slowdowns (100x slower) if the script contains a large inline payload due to complete tag serialization.
+**Action:** Replace `soup.select()` with targeted `soup.find_all()` using lists for class grouping to achieve single-pass checking. Use `tag.text` rather than `str(tag)` when inspecting tag content strings to avoid serialization penalties.
