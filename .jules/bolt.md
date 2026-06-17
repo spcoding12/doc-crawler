@@ -1,0 +1,3 @@
+## 2024-06-17 - Optimize BeautifulSoup DOM Traversal
+**Learning:** Using `soup.select()` for CSS selector matching is significantly slower than using `.find()` or `.find_all()` with direct attribute lookups (e.g., `attrs={'name': 'generator'}`) or bulk class checks (`class_=['class1', 'class2']`). Furthermore, `str(tag)` or `script.string` for tag stringification is extremely expensive; `.text` is much faster.
+**Action:** Always prefer `.find()` and `.find_all()` over `.select()` for performance-critical DOM traversal. Consolidate multiple independent class checks into single-pass operations using `class_=[...]`.
