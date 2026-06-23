@@ -1,0 +1,3 @@
+## 2024-10-24 - Pass pre-detected state to avoid redundant parsing
+**Learning:** In a multi-page crawler, passing globally detected context (like the `framework` name) down to page-level extraction functions (like `extract_content`) prevents redundant and expensive DOM tree construction via `BeautifulSoup(html, 'lxml')` on every single page.
+**Action:** When iterating over many similar items (e.g., pages from the same site), identify expensive operations (like framework detection) that only need to be determined once, and pass the result to downstream functions that accept it as an optional argument.
