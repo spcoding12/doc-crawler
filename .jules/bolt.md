@@ -1,0 +1,3 @@
+## 2024-06-26 - [Pass Framework Context to Bypass Redundant Detection]
+**Learning:** In a multi-page crawler architecture like this one (`src/main.py` calling `src/extractor.py`), failing to pass the globally detected framework name (available as `adapter.name` or `framework.name`) down to the page-level `extract_content` function forces `BeautifulSoup` and detection heuristics to re-run unnecessarily on every single page during extraction.
+**Action:** When extracting content inside a loop where the framework is already known (e.g. `adapter.name`), pass the framework name explicitly via `extract_content(html, framework=adapter.name)` to bypass the redundant `detect_framework(html)` call, improving performance by avoiding duplicate HTML parsing/evaluation.
