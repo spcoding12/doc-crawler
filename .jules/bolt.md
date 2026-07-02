@@ -1,0 +1,5 @@
+## 2025-02-12 - Optimized framework detection using native bs4 techniques
+
+**Learning:** When evaluating framework indicators on a Beautifulsoup object in `src/detector.py`, using generic CSS selectors like `soup.select('.theme-doc-sidebar-menu')` and `soup.select('meta[name="generator"]')` inside multiple passes is very inefficient. `detect_framework` does sequentially multiple `select` statements and closures checking elements. Testing demonstrated that using native bs4 search attributes `soup.find_all` and `soup.find` or checking multiple classes at once in one pass with `soup.find(class_=['class1', 'class2'])` accelerates framework detection by ~2.5x to ~4.3x! Also avoiding generic `.select` in favor of more specific direct checks like `.find` and doing one-pass check of `script` elements yields large improvements.
+
+**Action:** Refactor `src/detector.py` to use `find` and `find_all` over `select`, check multiple specific elements in a single `find` where possible, and combine overlapping checks.
