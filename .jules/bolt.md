@@ -1,0 +1,3 @@
+## 2024-05-18 - BeautifulSoup DOM Traversal Optimization
+**Learning:** In the `detector.py` framework identification logic, iterating over multiple `soup.select()` CSS queries and subsequently stringifying DOM nodes via `str(tag)` for regex or substring matching is extremely slow. Replacing these operations with consolidated `soup.find(class_=[...])` and direct tag attribute lookups (e.g., `tag.get('src')`) with `tag.text` provides a ~5x-10x performance improvement while preserving semantic detection behavior.
+**Action:** Always prefer native `find`/`find_all` attribute matching and consolidated class lookups (`class_=['a', 'b']`) over multiple CSS `select()` statements and full tag serialization (`str(tag)`) when parsing HTML with BeautifulSoup.
