@@ -1,0 +1,3 @@
+## 2024-05-24 - Performance pattern for BeautifulSoup DOM traversal
+**Learning:** Checking elements sequentially using `.select()` with CSS selectors is extremely slow compared to checking multiple classes at once using `.find(class_=['class1', 'class2'])`. Also, calling `str(tag)` or `.string` on script tags with significant content triggers an expensive full serialization, whereas using `.text` is much faster and safer.
+**Action:** Replace `soup.select()` chains with `soup.find(class_=list_of_classes)` for class checks. Replace `str(tag)` with `.text` when checking script or generic tag content for keywords. Replace `meta` checks with targeted `soup.find('meta', attrs={'name': ...})`. Apply this to `src/detector.py`.
