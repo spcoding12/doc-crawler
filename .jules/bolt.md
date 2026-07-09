@@ -1,0 +1,3 @@
+## 2025-07-09 - BeautifulSoup Performance Pattern
+**Learning:** Consolidate multiple independent class checks into a single-pass operation by passing a list to the class parameter (e.g., `soup.find(class_=['class1', 'class2', ...])`). This acts as an optimized OR check that traverses the DOM tree, further reducing overhead compared to checking selectors one by one. Also, use `script.text` instead of `str(script)` when iterating through tags, as `str(script)` causes huge serialization overhead.
+**Action:** Replace `soup.select` loops that search for single classes with a single `soup.find(class_=[...])` call where possible, and avoid calling `str(tag)` during tag iteration.
