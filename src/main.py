@@ -286,7 +286,8 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # Pass globally detected framework to avoid redundant parsing in extractor
+                content = extract_content(page_result.html, url, framework=adapter.name)
                 
                 # 处理图片
                 markdown = content.markdown
