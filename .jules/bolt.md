@@ -1,0 +1,3 @@
+## 2024-05-24 - Avoid `str(tag)` in BeautifulSoup
+**Learning:** Using `str(tag)` to serialize a BeautifulSoup tag to string to perform substring matching (e.g. `'docusaurus' in str(tag)`) is significantly slower (~10x slower) than extracting the text and specific attributes (e.g., `'docusaurus' in tag.get('src', '').lower() or 'docusaurus' in tag.string.lower()`). This overhead comes from BeautifulSoup reconstructing the full HTML string.
+**Action:** Replace `str(tag)` with attribute extraction (`.get()`) and text content extraction (`.string` or `.text`) when checking if a tag contains a specific string in `src/detector.py`.
