@@ -1,0 +1,3 @@
+## 2024-07-22 - Optimize BeautifulSoup lookups by replacing CSS selectors with direct `.find`
+**Learning:** Using `.select()` and iterating through a list of CSS selectors causes significant parsing overhead. Consolidating multiple independent class checks into a single-pass operation by passing a list to the class parameter (`soup.find(class_=['class1', 'class2', ...])`) acts as an optimized OR check and traverses the DOM tree much faster. Additionally, using `.text` instead of `str(tag)` or `.string` prevents full tag serialization performance penalties and safely handles elements with children.
+**Action:** Always prefer `.find()`/`.find_all()` with combined attributes or classes over multiple `.select()` calls. Use `.text` for tag text extraction.
