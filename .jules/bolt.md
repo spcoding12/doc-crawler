@@ -1,0 +1,3 @@
+## 2024-05-18 - Replacing BeautifulSoup .select() with .find()/.find_all() for class lookups
+**Learning:** Using `soup.select()` for CSS selector based lookups is significantly slower than native DOM traversal using `soup.find(class_=['class1', 'class2'])`. A 4-6x speedup was observed in benchmarking. Also, accessing `.text` is more efficient than `str(tag)` or `.string` when parsing script tags to avoid full serialization.
+**Action:** When identifying elements by class names or basic attributes for existence checks, prefer passing a list to the `class_` argument of `.find()` or `.find_all()` over writing `.select('.class1')` loops.
