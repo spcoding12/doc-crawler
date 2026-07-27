@@ -26,123 +26,85 @@ class FrameworkInfo:
 
 def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docusaurus 框架"""
-    indicators = [
-        # Docusaurus v2/v3 特征
-        ('meta[name="generator"]', lambda tag: 'docusaurus' in tag.get('content', '').lower()),
-        ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
-        ('.theme-doc-sidebar-menu', lambda tag: True),
-        ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                # 尝试获取版本
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'docusaurus' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('docusaurus', version, confidence=0.9)
-    
+    # Check generator meta tag first as it also contains the version we need to extract
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and 'docusaurus' in meta.get('content', '').lower():
+        return FrameworkInfo('docusaurus', meta.get('content'), confidence=0.9)
+
+    # Check for Docusaurus v2/v3 specific data attributes and classes
+    if soup.find('html', attrs={'data-theme': True}) and soup.find('div', class_='theme-doc-sidebar-container'):
+        return FrameworkInfo('docusaurus', confidence=0.9)
+
+    if soup.find(class_=['theme-doc-sidebar-menu', 'docusaurus']):
+        return FrameworkInfo('docusaurus', confidence=0.9)
+
+    for script in soup.find_all('script'):
+        if 'docusaurus' in script.get('src', '').lower() or 'docusaurus' in script.text.lower():
+            return FrameworkInfo('docusaurus', confidence=0.9)
+
     return None
 
 
 def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 VuePress 框架"""
-    indicators = [
-        # VuePress 1.x
-        ('.theme-default-content', lambda tag: True),
-        ('.sidebar-links', lambda tag: True),
-        # VuePress 2.x / VitePress
-        ('.vp-doc', lambda tag: True),
-        ('.VPSidebar', lambda tag: True),
-        ('div[id="app"]', lambda tag: soup.find('div', class_='theme-container') is not None),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('vuepress', confidence=0.85)
-    
-    # 检查是否有 VuePress 特有的脚本
-    scripts = soup.find_all('script')
-    for script in scripts:
-        src = script.get('src', '')
-        text = script.string or ''
-        if 'vuepress' in src.lower() or 'vuepress' in text.lower():
+    # Check for specific VuePress classes
+    if soup.find(class_=['theme-default-content', 'sidebar-links', 'vp-doc', 'VPSidebar']):
+        return FrameworkInfo('vuepress', confidence=0.85)
+
+    # Check for Vue app container pattern
+    if soup.find('div', id='app') and soup.find('div', class_='theme-container'):
+        return FrameworkInfo('vuepress', confidence=0.85)
+
+    # Check scripts for VuePress signatures
+    for script in soup.find_all('script'):
+        if 'vuepress' in script.get('src', '').lower() or 'vuepress' in script.text.lower():
             return FrameworkInfo('vuepress', confidence=0.8)
-    
+
     return None
 
 
 def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 MkDocs 框架"""
-    indicators = [
-        # Material for MkDocs
-        ('.md-content', lambda tag: True),
-        ('.md-sidebar', lambda tag: True),
-        ('.md-nav', lambda tag: True),
-        # 标准 MkDocs
-        ('meta[name="generator"]', lambda tag: 'mkdocs' in tag.get('content', '').lower()),
-        ('.wy-nav-content', lambda tag: True),  # ReadTheDocs theme
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'mkdocs' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('mkdocs', version, confidence=0.9)
-    
+    # Specific mkdocs generator check
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and 'mkdocs' in meta.get('content', '').lower():
+        return FrameworkInfo('mkdocs', meta.get('content'), confidence=0.9)
+
+    # Check MkDocs and Material for MkDocs specific classes
+    if soup.find(class_=['md-content', 'md-sidebar', 'md-nav', 'wy-nav-content']):
+        return FrameworkInfo('mkdocs', confidence=0.9)
+
     return None
 
 
 def detect_gitbook(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 GitBook 框架"""
-    indicators = [
-        # GitBook 特征
-        ('.book-summary', lambda tag: True),
-        ('.page-inner', lambda tag: True),
-        ('.gitbook-root', lambda tag: True),
-        ('meta[name="generator"]', lambda tag: 'gitbook' in tag.get('content', '').lower()),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('gitbook', confidence=0.85)
-    
-    # 检查链接特征
-    if soup.find('link', href=lambda x: x and 'gitbook' in x.lower()):
+    # Specific gitbook generator check
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and 'gitbook' in meta.get('content', '').lower():
+        return FrameworkInfo('gitbook', confidence=0.85)
+
+    # Check GitBook specific classes
+    if soup.find(class_=['book-summary', 'page-inner', 'gitbook-root']):
+        return FrameworkInfo('gitbook', confidence=0.85)
+
+    if soup.find('link', attrs={'href': lambda x: x and 'gitbook' in x.lower()}):
         return FrameworkInfo('gitbook', confidence=0.7)
-    
+
     return None
 
 
 def detect_docsify(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docsify 框架"""
-    # 检查 script 标签中是否引用了 docsify
     for script in soup.find_all('script'):
-        src = script.get('src', '')
-        text = script.string or ''
-        if 'docsify' in src.lower() or '$docsify' in text:
+        if 'docsify' in script.get('src', '').lower() or '$docsify' in script.text:
             return FrameworkInfo('docsify', confidence=0.9)
     
-    # 检查特征元素
-    if soup.select_one('.sidebar-toggle'):
+    if soup.find(class_='sidebar-toggle'):
         body = soup.find('body')
-        if body:
-            body_class = ' '.join(body.get('class', []))
-            if 'ready' in body_class:
-                return FrameworkInfo('docsify', confidence=0.8)
-    
+        if body and 'ready' in body.get('class', []):
+            return FrameworkInfo('docsify', confidence=0.8)
+
     return None
 
 
