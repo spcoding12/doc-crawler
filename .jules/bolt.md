@@ -1,0 +1,3 @@
+## 2024-03-24 - Framework Detection Bottlenecks
+**Learning:** Using `soup.select()` within loops for multiple framework indicators causes significant performance degradation because it traverses the DOM repeatedly for each CSS selector. Similarly, using `str(tag)` on `<script>` tags causes full tag serialization which is ~100x slower than checking `tag.text`.
+**Action:** Replace `soup.select()` with `soup.find()` or `soup.find_all()` using consolidated attribute or class lookups (e.g., `class_=['a', 'b']`) to perform a single-pass tree traversal. Replace `str(tag)` with `tag.text` for text content checks inside elements like scripts.
