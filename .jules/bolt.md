@@ -1,0 +1,3 @@
+## 2024-08-04 - Optimize BeautifulSoup queries in framework detector
+**Learning:** Replaced `.select` with `.find` and `str(tag)` with `tag.text` and `tag.get` in `src/detector.py`. `.select` parses CSS selectors dynamically and `str(tag)` causes full DOM serialization which is extremely slow on large DOM trees. Using `.find()` and list based class checks `.find(class_=['cls1', 'cls2'])` reduces processing time dramatically.
+**Action:** Always favor `.find` and `.find_all` over `.select` for simple attribute queries and class checks, and use `.text` instead of `str(tag)` when inspecting element text content for optimal parsing performance in bs4.
