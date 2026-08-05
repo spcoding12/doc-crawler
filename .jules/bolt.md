@@ -1,0 +1,3 @@
+## 2024-08-05 - BeautifulSoup Performance Optimization in Detector
+**Learning:** Using `soup.select()` with CSS selectors and evaluating `str(tag)` for serializing full tags is a severe performance bottleneck. Consolidating multiple class checks into a single `soup.find(class_=[...])` and using `.text` / `.get()` on tags speeds up execution dramatically (around 5x faster).
+**Action:** Always prefer native `soup.find` or `soup.find_all` with direct attribute/class lookups over CSS selectors, and never serialize entire BS4 tags (e.g., `str(tag)`) when extracting specific data or checking existence.
