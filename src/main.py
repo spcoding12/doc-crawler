@@ -286,7 +286,9 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # Bolt Optimization: Pass the globally detected framework to avoid redundant parsing
+                framework_name = adapter.name if adapter else None
+                content = extract_content(page_result.html, url, framework=framework_name)
                 
                 # 处理图片
                 markdown = content.markdown
