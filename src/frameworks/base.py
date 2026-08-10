@@ -8,6 +8,7 @@ class FrameworkAdapter(ABC):
     """文档框架适配器基类"""
     
     name: str = "unknown"
+    config: dict = {}
     
     @classmethod
     @abstractmethod
