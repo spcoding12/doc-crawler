@@ -1,0 +1,3 @@
+## 2024-08-12 - Optimized framework detection using native bs4 lookups
+**Learning:** In BeautifulSoup, using `.select()` with CSS selectors is significantly slower (up to 5-10x) than using native `.find()` or `.find_all()` with specific class lists (e.g. `class_=['class1', 'class2']`). Also, serializing tags with `str(tag)` or checking `tag.string` is slower and less robust than using `.text` and checking attributes directly.
+**Action:** Replace CSS selectors in the framework detection logic (`src/detector.py`) with native `find` and `find_all` methods for direct attribute and class lookups to avoid parser overhead and speed up the detection process.
