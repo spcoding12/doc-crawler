@@ -1,0 +1,3 @@
+## 2024-08-15 - BeautifulSoup Optimization
+**Learning:** In BeautifulSoup, using `soup.select()` with CSS selectors is significantly slower than using `soup.find(class_=[...])`. The latter acts as an optimized OR check and only traverses the DOM once. Also, using `.text` or direct attribute checks instead of stringifying elements (`str(tag)`) avoids severe serialization performance penalties.
+**Action:** Always prefer `.find()` or `.find_all()` with direct attribute lookups over `.select()`. When extracting text from tags, use `.text` and check attributes like `tag.get('src', '')` instead of `str(tag)`.
