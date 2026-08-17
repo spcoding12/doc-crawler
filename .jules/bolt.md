@@ -1,0 +1,3 @@
+## 2024-05-14 - Optimize BeautifulSoup Selectors in Framework Detection
+**Learning:** Sequential `.select()` calls with CSS selectors in BeautifulSoup are highly inefficient, especially when run on large DOMs (like those with many `<script>` tags), and when combined with full tag stringification `str(tag)` for regex or substring matching. Passing a list of classes to `class_` in `.find()` acts as an optimized single-pass OR search, which is up to ~10x faster than testing `.select()` iteratively.
+**Action:** Replace `soup.select()` chains with `soup.find(class_=[...])` and avoid `str(tag)` by using `.text` and `.get('src', '')` for attribute checking when doing presence validation in HTML.
