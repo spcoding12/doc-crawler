@@ -1,0 +1,3 @@
+## 2024-08-21 - Beautifulsoup .select() overhead vs direct .find()
+**Learning:** In a multi-page crawler identifying frameworks, repetitively compiling and evaluating CSS selectors using `soup.select()` is extremely slow (up to 5-10x slower) compared to direct `soup.find()` attribute and multi-class lookups (`class_=['a', 'b']`). Additionally, using `str(tag)` on elements with many children (like `<script>`) incurs massive serialization overhead compared to `tag.text`.
+**Action:** Replace `soup.select()` with direct `.find()`/`.find_all()` lookups where applicable, and utilize short-circuiting logic in detection routines instead of scanning all possible indicators. Ensure text extraction from tags uses `.text` rather than full stringification with `str()`.
