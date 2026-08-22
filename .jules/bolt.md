@@ -1,0 +1,3 @@
+## 2023-10-18 - Framework detection query optimization
+**Learning:** Using `soup.select()` and serializing tags with `str(tag)` or `.string` within a list of checks significantly degrades performance by executing redundant CSS parsing and full DOM element serialization.
+**Action:** Replace `.select()` with `.find()` and consolidate independent class checks by passing a list to the `class_` parameter (e.g., `soup.find(class_=['class1', 'class2'])`). Use `.text` instead of `str(tag)` or `.string` to safely and efficiently extract text content from elements like scripts. Extract specific attributes (e.g., versions) before returning early to avoid skipping extraction.
