@@ -1,0 +1,3 @@
+## 2024-05-18 - BeautifulSoup DOM Traversal Optimization
+**Learning:** In BeautifulSoup, using `soup.select()` within loops for multiple classes/tags incurs significant performance overhead. Furthermore, serializing tags with `str(tag)` or using `tag.string` inside detection scripts is extremely slow (up to ~5x slower for complex files) and can sometimes return None if multiple child nodes are present.
+**Action:** Replace `soup.select()` loops with `soup.find(class_=[...])` for a fast, single-pass OR traversal. Always prioritize specific attributes (`<meta name="generator">`) before DOM traversal, and use `.text` for safe and fast string extraction instead of `str(tag)` or `.string`.
