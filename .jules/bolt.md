@@ -1,0 +1,3 @@
+## 2024-05-24 - Avoid Redundant DOM Parsing in Multi-Page Crawlers
+**Learning:** In a multi-page crawler architecture, automatically re-detecting the framework on every single page by fully parsing the DOM tree (e.g., using BeautifulSoup) introduces severe performance overhead. We discovered that by globally detecting the framework once on the starting page and passing it down to page-level extractors, we bypass this redundant operation entirely.
+**Action:** Always extract static/global contexts (like framework name, site language, or overarching structure) on the first page or configuration step, and pass them explicitly to extraction functions to prevent repetitive parsing on every item in the dataset.
