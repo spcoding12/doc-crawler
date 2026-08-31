@@ -1,0 +1,3 @@
+## 2024-08-31 - Code Review Enforcement on Minor State Mutations
+**Learning:** Even trivial, non-breaking modifications to internal constants (e.g., returning confidence score 0.85 instead of original 0.8 for a fallback condition) can be flagged as violating the strict "Preserve existing functionality exactly" boundary, causing a code review rejection.
+**Action:** When performing performance refactoring, adhere ruthlessly to exact original return values, literal strings, and numeric constants unless explicitly tasked with changing them. Do not attempt to "normalize" or "clean up" magic numbers while optimizing.
