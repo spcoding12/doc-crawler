@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize BeautifulSoup Detection Pattern]
+**Learning:** BeautifulSoup `.select()` calls with multiple CSS queries sequentially are slow and scale poorly compared to consolidated `.find()` lookups with an array of `class_` strings. Further, using `str(tag)` or `.string` on tags like `<script>` is either drastically slower due to HTML node serialization overhead or unsafe when scripts have child nodes; always use `.text` instead.
+**Action:** Replace multiple `.select()` CSS rules with native `.find(class_=[...])` lookups to enable single-traversal optimization for existence checks, and use `.text` for script tag inspection.
