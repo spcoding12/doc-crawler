@@ -1,0 +1,3 @@
+## 2024-05-24 - Performance pattern BeautifulSoup
+**Learning:** Use `.find()` or `.find_all()` with direct attribute lookups instead of `.select()` with CSS selectors to avoid parsing overhead. For complex attribute matching, use lambda functions within `attrs` (e.g., `attrs={'content': lambda c: c and 'val' in c}`). When replacing `.select()`, use `.find_all()` if evaluating multiple candidate tags, as `.find()` short-circuits on the first match. Assign the result of `.find()` to a variable if both checking for existence and extracting data to avoid redundant DOM traversal.
+**Action:** Replace `soup.select(selector)` with `soup.find_all(...)` in `src/detector.py`.
