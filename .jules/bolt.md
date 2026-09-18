@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimizing BeautifulSoup DOM Traversal
+**Learning:** The use of `str(tag)` combined with CSS `.select()` for querying and verifying DOM nodes incurs a massive performance penalty. Serializing the whole tag to string (e.g. for `<script>` tags with large payloads) can cause exponential slowdowns.
+**Action:** Replace `.select()` with `.find()` / `.find_all()`, especially using the `class_=['class1', 'class2']` parameter for multi-class lookups in a single pass. Also, always avoid `str(tag)` for text extraction, preferring `tag.text` which safely gets the inner text without serializing attributes and HTML, while separately checking `tag.get('src', '')` if necessary.
