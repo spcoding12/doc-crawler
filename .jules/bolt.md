@@ -1,0 +1,3 @@
+## 2024-03-20 - BeautifulSoup Selector Performance Anti-pattern
+**Learning:** `soup.select()` and `str(tag)` operations are severe performance bottlenecks in BeautifulSoup parsing. In `src/detector.py`, converting tags to strings using `str(tag)` inside loops takes significantly longer than directly checking attributes like `.get('src', '')` and `.text`. Additionally, `soup.select()` is >30x slower than `.find_all()` or `.find()` for simple tag lookups.
+**Action:** Replace `soup.select()` with `.find()` or `.find_all()` and replace `str(tag)` with `.get()` and `.text` when searching for framework indicators.
