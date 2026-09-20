@@ -1,0 +1,3 @@
+## 2025-09-20 - Pass Framework to extract_content to Avoid Redundant Parsing
+**Learning:** In the multi-page crawler (`src/main.py`), the `extract_content` function from `src/extractor.py` is called for every page. It has a `framework` argument but it's currently not being used in the main loop, causing the application to redundantly parse the DOM (via `detect_framework`) to identify the framework on every single page, even though the framework was already determined globally at the start of the crawl.
+**Action:** Pass the `adapter.name` (or the globally detected framework name) directly to `extract_content(..., framework=adapter.name)` inside the `src/main.py` loop to bypass the redundant `BeautifulSoup` parsing in `detect_framework`.
