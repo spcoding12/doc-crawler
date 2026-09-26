@@ -1,0 +1,3 @@
+## 2024-05-24 - Avoid `.select()` in BeautifulSoup
+**Learning:** `soup.select()` with CSS selectors is significantly slower than native `.find()` and `.find_all()` lookups for elements. Replacing a list of CSS selector queries inside a loop with direct attribute checks and class list aggregations reduces DOM traversal overhead substantially (e.g. from 6.0s to 1.3s for 100 loops).
+**Action:** Use `.find(class_=['cls1', 'cls2'])` instead of looping through `.select('.cls1')` and `.select('.cls2')`. Use `.text` safely to avoid `str(tag)` full-serialization overhead, but remember `.text` does not include tag attributes like `.string` did when serialized.
