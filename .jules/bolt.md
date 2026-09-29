@@ -1,0 +1,4 @@
+
+## 2024-05-02 - Optimize BeautifulSoup queries in framework detector
+**Learning:** `soup.select()` using CSS selectors is significantly slower than direct `.find()` or `.find_all()` calls. Converting tag contents to strings (e.g., `str(tag)`) for regex or text search incurs a severe serialization penalty compared to checking `tag.text` and attributes like `tag.get('src')`. Checking for exact versions first prevents short-circuiting logic from missing the version when using combined selectors.
+**Action:** Always prefer native BeautifulSoup finding methods (`.find`, `.find_all` passing lists for OR conditions) over CSS selectors (`.select`) when possible. Extract specific version data before general presence checks. Avoid full tag serialization (`str(tag)`) and use `.text` with explicit attribute checks.
