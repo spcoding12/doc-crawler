@@ -52,7 +52,8 @@ class DocusaurusAdapter(FrameworkAdapter):
         
         # 检查脚本中是否包含 docusaurus
         for script in soup.find_all('script'):
-            if 'docusaurus' in (script.get('src', '') + (script.string or '')).lower():
+            # Performance Optimization: Use .text over .string to robustly capture text without serialization overhead
+            if 'docusaurus' in (script.get('src', '') + str(script.get('id', '')) + script.text).lower():
                 return True
         
         return False

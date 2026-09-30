@@ -32,7 +32,8 @@ def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
         ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
         ('.theme-doc-sidebar-menu', lambda tag: True),
         ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
+        # Performance Optimization: Using .text and attribute lookup avoids expensive tag serialization via str(tag)
+        ('script', lambda tag: 'docusaurus' in (tag.get('src', '') + str(tag.get('id', '')) + tag.text).lower()),
     ]
     
     for selector, check in indicators:
@@ -71,7 +72,8 @@ def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     scripts = soup.find_all('script')
     for script in scripts:
         src = script.get('src', '')
-        text = script.string or ''
+        # Performance Optimization: Use .text to avoid missing content if tag has multiple children, safer than .string
+        text = script.text
         if 'vuepress' in src.lower() or 'vuepress' in text.lower():
             return FrameworkInfo('vuepress', confidence=0.8)
     
@@ -131,7 +133,8 @@ def detect_docsify(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     # 检查 script 标签中是否引用了 docsify
     for script in soup.find_all('script'):
         src = script.get('src', '')
-        text = script.string or ''
+        # Performance Optimization: Use .text to avoid missing content if tag has multiple children, safer than .string
+        text = script.text
         if 'docsify' in src.lower() or '$docsify' in text:
             return FrameworkInfo('docsify', confidence=0.9)
     
