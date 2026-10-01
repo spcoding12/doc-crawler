@@ -1,0 +1,3 @@
+## 2024-11-20 - BeautifulSoup Framework Detection Performance
+**Learning:** Using `soup.select()` with CSS selectors inside loops and `str(tag)` on large elements (like `<script>` tags containing state) causes severe performance bottlenecks during HTML parsing (taking ~6s for a large document). `str(tag)` serializes the entire tag back to HTML which is extremely slow.
+**Action:** Replace `soup.select()` loops with direct `soup.find()` / `soup.find_all()` lookups using attributes. For scripts, avoid `str(tag)` and instead check `tag.get('src', '')`, `tag.get('id', '')`, and `tag.text`. Consolidate checks and pass cached elements (like all scripts or the meta tag) down if possible, or just optimize the element lookups. This improves detection time from ~6s down to ~0.4s.
