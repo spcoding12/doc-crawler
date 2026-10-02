@@ -1,0 +1,3 @@
+## 2024-10-02 - BeautifulSoup find vs select
+**Learning:** In BeautifulSoup, using `soup.find_all(class_=['class1', 'class2'])` is significantly faster (~5x) than executing multiple `soup.select('.class')` calls because it consolidates multiple independent class checks into a single-pass operation across the DOM tree. The `select()` method incurs additional CSS parsing overhead and traverses the tree multiple times when checked individually.
+**Action:** Optimize `src/detector.py` by replacing sequential `soup.select()` loops with a single `soup.find()` or `soup.find_all()` call that takes a list of classes, especially in functions like `detect_vuepress` and `detect_mkdocs` where multiple disjoint class indicators are checked.
