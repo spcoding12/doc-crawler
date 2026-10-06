@@ -1,0 +1,3 @@
+## 2024-10-06 - Optimizing BeautifulSoup DOM Traversal
+**Learning:** In BeautifulSoup, consolidating multiple independent class checks into a single-pass `class_=['class1', 'class2']` parameter for `.find()` is significantly faster than using `.select()` with CSS selectors. Furthermore, extracting specific attributes (like version strings) must occur before generic existence checks, otherwise the extraction is skipped if the early return condition is met.
+**Action:** Always prefer native `.find()` and `.find_all()` with direct attribute mapping (e.g., passing lists to `class_`) over `.select()`, and structure early returns such that specific data extractions happen first.
