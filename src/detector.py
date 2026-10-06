@@ -26,52 +26,42 @@ class FrameworkInfo:
 
 def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docusaurus 框架"""
-    indicators = [
-        # Docusaurus v2/v3 特征
-        ('meta[name="generator"]', lambda tag: 'docusaurus' in tag.get('content', '').lower()),
-        ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
-        ('.theme-doc-sidebar-menu', lambda tag: True),
-        ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
-    ]
+    # ⚡ OPTIMIZATION: Extract version strings before generic checks
+    # ⚡ OPTIMIZATION: Use .find() with direct attribute lookups instead of .select() CSS selectors
+    meta = soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'docusaurus' in c.lower()})
+    if meta:
+        return FrameworkInfo('docusaurus', meta.get('content'), confidence=0.9)
+
+    # ⚡ OPTIMIZATION: Combine nested checks to avoid redundant traversal
+    html_tag = soup.find('html', attrs={'data-theme': True})
+    if html_tag and soup.find('div', class_='theme-doc-sidebar-container'):
+        return FrameworkInfo('docusaurus', None, confidence=0.9)
     
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                # 尝试获取版本
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'docusaurus' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('docusaurus', version, confidence=0.9)
+    # ⚡ OPTIMIZATION: Consolidate multiple independent class checks into a single-pass .find() array
+    if soup.find(class_=['theme-doc-sidebar-menu', 'docusaurus']):
+        return FrameworkInfo('docusaurus', None, confidence=0.9)
     
+    if soup.find('script', id='__docusaurus') or soup.find('script', string=lambda t: t and 'docusaurus' in t.lower()):
+        return FrameworkInfo('docusaurus', None, confidence=0.9)
+
     return None
 
 
 def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 VuePress 框架"""
-    indicators = [
-        # VuePress 1.x
-        ('.theme-default-content', lambda tag: True),
-        ('.sidebar-links', lambda tag: True),
-        # VuePress 2.x / VitePress
-        ('.vp-doc', lambda tag: True),
-        ('.VPSidebar', lambda tag: True),
-        ('div[id="app"]', lambda tag: soup.find('div', class_='theme-container') is not None),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('vuepress', confidence=0.85)
+    # ⚡ OPTIMIZATION: Consolidate multiple independent class checks into a single-pass .find() array
+    if soup.find(class_=['theme-default-content', 'sidebar-links', 'vp-doc', 'VPSidebar']):
+        return FrameworkInfo('vuepress', confidence=0.85)
+
+    if soup.find('div', id='app') and soup.find('div', class_='theme-container'):
+        return FrameworkInfo('vuepress', confidence=0.85)
     
     # 检查是否有 VuePress 特有的脚本
     scripts = soup.find_all('script')
     for script in scripts:
         src = script.get('src', '')
-        text = script.string or ''
+        # ⚡ OPTIMIZATION: Use .text instead of .string for robustness and to avoid serialization penalties
+        text = script.text or ''
         if 'vuepress' in src.lower() or 'vuepress' in text.lower():
             return FrameworkInfo('vuepress', confidence=0.8)
     
@@ -80,44 +70,29 @@ def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
 
 def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 MkDocs 框架"""
-    indicators = [
-        # Material for MkDocs
-        ('.md-content', lambda tag: True),
-        ('.md-sidebar', lambda tag: True),
-        ('.md-nav', lambda tag: True),
-        # 标准 MkDocs
-        ('meta[name="generator"]', lambda tag: 'mkdocs' in tag.get('content', '').lower()),
-        ('.wy-nav-content', lambda tag: True),  # ReadTheDocs theme
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                version = None
-                meta = soup.find('meta', {'name': 'generator'})
-                if meta and 'mkdocs' in meta.get('content', '').lower():
-                    version = meta.get('content')
-                return FrameworkInfo('mkdocs', version, confidence=0.9)
+    # ⚡ OPTIMIZATION: Extract version strings before generic checks
+    # ⚡ OPTIMIZATION: Use .find() with direct attribute lookups instead of .select() CSS selectors
+    meta = soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'mkdocs' in c.lower()})
+    if meta:
+        return FrameworkInfo('mkdocs', meta.get('content'), confidence=0.9)
+
+    # ⚡ OPTIMIZATION: Consolidate multiple independent class checks into a single-pass .find() array
+    if soup.find(class_=['md-content', 'md-sidebar', 'md-nav', 'wy-nav-content']):
+        return FrameworkInfo('mkdocs', None, confidence=0.9)
     
     return None
 
 
 def detect_gitbook(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 GitBook 框架"""
-    indicators = [
-        # GitBook 特征
-        ('.book-summary', lambda tag: True),
-        ('.page-inner', lambda tag: True),
-        ('.gitbook-root', lambda tag: True),
-        ('meta[name="generator"]', lambda tag: 'gitbook' in tag.get('content', '').lower()),
-    ]
-    
-    for selector, check in indicators:
-        elements = soup.select(selector)
-        for el in elements:
-            if check(el):
-                return FrameworkInfo('gitbook', confidence=0.85)
+    # ⚡ OPTIMIZATION: Use .find() with direct attribute lookups instead of .select() CSS selectors
+    meta = soup.find('meta', attrs={'name': 'generator', 'content': lambda c: c and 'gitbook' in c.lower()})
+    if meta:
+        return FrameworkInfo('gitbook', None, confidence=0.85)
+
+    # ⚡ OPTIMIZATION: Consolidate multiple independent class checks into a single-pass .find() array
+    if soup.find(class_=['book-summary', 'page-inner', 'gitbook-root']):
+        return FrameworkInfo('gitbook', confidence=0.85)
     
     # 检查链接特征
     if soup.find('link', href=lambda x: x and 'gitbook' in x.lower()):
@@ -131,12 +106,14 @@ def detect_docsify(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     # 检查 script 标签中是否引用了 docsify
     for script in soup.find_all('script'):
         src = script.get('src', '')
-        text = script.string or ''
+        # ⚡ OPTIMIZATION: Use .text instead of .string for robustness and to avoid serialization penalties
+        text = script.text or ''
         if 'docsify' in src.lower() or '$docsify' in text:
             return FrameworkInfo('docsify', confidence=0.9)
     
     # 检查特征元素
-    if soup.select_one('.sidebar-toggle'):
+    # ⚡ OPTIMIZATION: Use .find() with direct attribute lookups instead of .select_one() CSS selectors
+    if soup.find(class_='sidebar-toggle'):
         body = soup.find('body')
         if body:
             body_class = ' '.join(body.get('class', []))
