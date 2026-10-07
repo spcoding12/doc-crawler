@@ -1,0 +1,3 @@
+## 2025-05-18 - BeautifulSoup Detection Performance
+**Learning:** Using `soup.select()` and CSS selectors for simple class existence checks is significantly slower than using `soup.find(class_=[...])`. Additionally, using `str(tag)` on `<script>` tags triggers expensive DOM serialization, completely destroying regex/text search performance. `.text` should be used instead.
+**Action:** Always prefer `soup.find()` or `.find_all()` with direct attribute lookups over `.select()`. Consolidate multiple independent class checks into a single-pass operation by passing a list to the `class_` parameter. Never serialize BS4 tags to strings to search their content.
