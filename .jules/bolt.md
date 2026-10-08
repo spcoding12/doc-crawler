@@ -1,0 +1,3 @@
+## 2024-05-10 - Passing Framework Name to Skip Redundant Parsing
+**Learning:** In a multi-page crawler, global state (like framework detection) is often established early (e.g., in `main.py`). If this context isn't passed down to per-page parsing routines (like `extract_content`), the system will redundantly rebuild expensive DOM trees (`BeautifulSoup(html, 'lxml')`) on every single page just to re-identify the framework.
+**Action:** When extracting content across multiple pages where the framework is already known, always pass the detected framework name to `extract_content(html, url, framework=framework.name)`.
