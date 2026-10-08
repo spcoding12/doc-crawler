@@ -286,7 +286,10 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # OPTIMIZATION: Pass the globally detected framework name to avoid redundant BeautifulSoup DOM parsing
+                # and regex evaluations inside extract_content for every single page.
+                # Expected Impact: Eliminates O(N) redundant DOM tree builds, significantly speeding up large site crawls.
+                content = extract_content(page_result.html, url, framework=framework.name)
                 
                 # 处理图片
                 markdown = content.markdown
