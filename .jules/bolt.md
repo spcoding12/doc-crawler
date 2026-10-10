@@ -1,0 +1,3 @@
+## 2024-05-18 - [BeautifulSoup Performance: `str()` serialization and `select()` overhead]
+**Learning:** Calling `str(tag)` on a BeautifulSoup element incurs a massive serialization overhead (approx 4-5x slower in synthetic benchmarks). Also, `soup.select()` is 2-3x slower than `soup.find_all()` or `soup.find()` due to CSS selector parsing and traversing.
+**Action:** Replace `str(tag)` with attribute extraction (e.g. `tag.get('src')` and `tag.text`) when looking for indicators in tags like `<script>`. Replace `soup.select()` with `soup.find_all(class_='...')` or `soup.find_all('tag', attrs=...)` when looking up elements in `src/detector.py`.
