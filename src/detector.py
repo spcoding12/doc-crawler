@@ -32,7 +32,8 @@ def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
         ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
         ('.theme-doc-sidebar-menu', lambda tag: True),
         ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
+        # ⚡ Bolt: 避免 str(tag) 序列化带来的巨大性能开销，改用属性和文本内容匹配
+        ('script', lambda tag: 'docusaurus' in tag.get('src', '').lower() or 'docusaurus' in tag.get('id', '').lower() or 'docusaurus' in (tag.text.lower() if tag.text else '')),
     ]
     
     for selector, check in indicators:
@@ -71,7 +72,8 @@ def detect_vuepress(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     scripts = soup.find_all('script')
     for script in scripts:
         src = script.get('src', '')
-        text = script.string or ''
+        # ⚡ Bolt: 使用 .text 代替 .string 以更稳定地提取内容（.string在有多个子节点时返回None）
+        text = script.text or ''
         if 'vuepress' in src.lower() or 'vuepress' in text.lower():
             return FrameworkInfo('vuepress', confidence=0.8)
     
@@ -131,7 +133,8 @@ def detect_docsify(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     # 检查 script 标签中是否引用了 docsify
     for script in soup.find_all('script'):
         src = script.get('src', '')
-        text = script.string or ''
+        # ⚡ Bolt: 使用 .text 代替 .string 以更稳定地提取内容（.string在有多个子节点时返回None）
+        text = script.text or ''
         if 'docsify' in src.lower() or '$docsify' in text:
             return FrameworkInfo('docsify', confidence=0.9)
     
