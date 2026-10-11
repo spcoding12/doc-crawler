@@ -1,0 +1,3 @@
+## 2024-05-24 - Avoid BeautifulSoup CSS Selectors and Tag Serialization in Detectors
+**Learning:** Parsing multiple distinct elements with CSS selectors via `soup.select()` and evaluating their attributes repeatedly, along with using `str(tag)` for script text checks, are significant performance bottlenecks when scaling DOM traversal across many framework detections. Serialization of `<script>` tag trees into full HTML strings inside loops takes order-of-magnitude more time.
+**Action:** Replace arrays of CSS selectors with single-pass `.find(class_=[...])` array OR logic. Use direct `.find('meta', attrs=...)` to check generator properties immediately. Substitute `str(tag)` with `tag.string` or direct attribute gets to bypass tree stringification penalties entirely.
