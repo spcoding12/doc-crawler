@@ -1,0 +1,3 @@
+## 2024-05-14 - Replace str(tag) with targeted attribute/text checks in BeautifulSoup
+**Learning:** Using `str(tag)` on a BeautifulSoup element (e.g., `<script>`) triggers a costly serialization process. This leads to a severe performance bottleneck if the tag has large contents, which happens often with JS script tags.
+**Action:** When extracting data or checking for contents within a `<script>` tag or other large elements, replace `str(tag)` with robust access patterns such as `.get('src', '')`, `.get('id', '')`, and `.text` to completely avoid the serialization penalty while still accurately checking the tag.

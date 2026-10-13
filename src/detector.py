@@ -26,13 +26,15 @@ class FrameworkInfo:
 
 def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
     """检测 Docusaurus 框架"""
+    # ⚡ Bolt Optimization: Avoid expensive str(tag) serialization which degrades performance
+    # on large script tags. Instead, perform direct lookups on attributes and text.
     indicators = [
         # Docusaurus v2/v3 特征
         ('meta[name="generator"]', lambda tag: 'docusaurus' in tag.get('content', '').lower()),
         ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
         ('.theme-doc-sidebar-menu', lambda tag: True),
         ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
+        ('script', lambda tag: 'docusaurus' in tag.get('src', '').lower() or 'docusaurus' in tag.get('id', '').lower() or 'docusaurus' in tag.text.lower()),
     ]
     
     for selector, check in indicators:
