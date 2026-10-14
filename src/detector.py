@@ -32,7 +32,9 @@ def detect_docusaurus(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
         ('html[data-theme]', lambda tag: soup.find('div', class_='theme-doc-sidebar-container') is not None),
         ('.theme-doc-sidebar-menu', lambda tag: True),
         ('.docusaurus', lambda tag: True),
-        ('script', lambda tag: 'docusaurus' in str(tag)),
+        # ⚡ Bolt Optimization: Avoid expensive str(tag) serialization
+        # Checking specific attributes and text is significantly faster than stringifying the entire DOM node
+        ('script', lambda tag: 'docusaurus' in (tag.get('src', '') + (tag.string or '')).lower() or 'docusaurus' in tag.get('id', '').lower()),
     ]
     
     for selector, check in indicators:
