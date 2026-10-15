@@ -1,0 +1,3 @@
+## 2024-05-24 - Pass framework down to extractor
+**Learning:** The crawler detects the framework once during the initialization phase (`detect_framework(result.html)` in `src/main.py`), which involves creating a BeautifulSoup DOM tree to check multiple complex signatures. However, in the concurrent loop, it calls `extract_content(page_result.html, url)` on each page. Because `framework` is not passed, `extract_content` automatically falls back to `detect_framework(html)` on every single page. This means the HTML is redundantly parsed by BeautifulSoup twice for every page (once for detection and once for extraction).
+**Action:** Pass the `framework.name` detected globally down to `extract_content` within the page extraction loop to bypass redundant DOM tree parsing.
