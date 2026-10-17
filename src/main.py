@@ -286,7 +286,9 @@ def crawl_docs(
                 if not page_result:
                     page_result = fetch_with_requests(url)
                 
-                content = extract_content(page_result.html, url)
+                # Performance Optimization: Passing the known framework avoids a redundant
+                # BeautifulSoup(html, 'lxml') parse and framework detection overhead for every single page in the loop.
+                content = extract_content(page_result.html, url, framework=adapter.name)
                 
                 # 处理图片
                 markdown = content.markdown
