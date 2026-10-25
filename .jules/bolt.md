@@ -1,0 +1,4 @@
+
+## $(date +%Y-%m-%d) - Optimize DOM Traversal in Framework Detection
+**Learning:** In `src/detector.py`, using `soup.select()` with CSS selectors is significantly slower than using native `soup.find()` / `soup.find_all()` with direct attribute and class lookups. Furthermore, stringifying BeautifulSoup elements (`str(tag)`) for evaluation is a major performance bottleneck due to serialization overhead.
+**Action:** Replace `soup.select()` with `soup.find()`/`soup.find_all()` when scanning for framework signatures. Use native `.text` combined with explicit attribute checks (like `.get('src', '')` and `.get('id', '')`) instead of `str(tag)` to evaluate element contents. Consolidate class checks into a single pass using `class_=['class1', 'class2']`. Implement early returns by fetching version data first if a primary indicator (like a meta tag) is found.
