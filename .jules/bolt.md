@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimize HTML parsing in detect_framework
+**Learning:** In a multi-page crawler architecture, extracting data from HTML is slow if using `soup.select()` or checking `str(tag)` since these trigger repetitive DOM traversal or serialization. Using `soup.find()` and `soup.find_all()` with attributes is much faster, and merging `class_` lookups with lists as well as leveraging native BS4 `tag.text` operations avoids stringification overhead.
+**Action:** Use native BeautifulSoup operations such as `soup.find_all()` or `soup.find(class_=[...])` and direct attribute lookups like `tag.get('src')` and `tag.text`.
