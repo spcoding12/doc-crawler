@@ -1,0 +1,3 @@
+## 2025-02-06 - BeautifulSoup stringification penalty
+**Learning:** Stringifying a BeautifulSoup tag using `str(tag)` or accessing `.string` when checking for text can incur a massive performance penalty during framework detection (e.g., in `src/detector.py`). A page with 1000 large script tags causes `detect_docusaurus` to take 1.5s purely due to `str(tag)`.
+**Action:** Replace `str(tag)` with robust accessors like `.text` and explicit attribute checks `.get('src', '')` and `.get('id', '')`. Replace `.string` with `.text` as `.string` returns None for tags with multiple children, which causes missed detections and makes it brittle.
