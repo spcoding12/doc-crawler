@@ -1,0 +1,3 @@
+## 2025-02-18 - Optimized framework detection
+**Learning:** Checking elements for attributes or classes using CSS selectors like `.select()` is very slow in BeautifulSoup compared to targeted native `.find()` and `.find_all()` using `attrs` or `class_`. Checking multiple classes in one pass via a list in `class_` (e.g. `soup.find(class_=['c1', 'c2'])`) acts as an efficient OR and avoids multiple tree traversals. In addition, checking existence before extraction logic helps but in this case, meta generator check is fast enough.
+**Action:** Replace `soup.select()` loops with `.find()` or `.find_all()` combining classes in lists and direct attribute lookups in `src/detector.py` to boost performance.
