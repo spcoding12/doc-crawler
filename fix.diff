@@ -1,0 +1,26 @@
+<<<<<<< SEARCH
+def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
+    """检测 MkDocs 框架"""
+    # Performance Optimization: Avoid CSS selector parsing overhead
+    if soup.find(class_=['md-content', 'md-sidebar', 'md-nav', 'wy-nav-content']):
+        return FrameworkInfo('mkdocs', confidence=0.9)
+
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and meta.get('content') and 'mkdocs' in meta.get('content').lower():
+        return FrameworkInfo('mkdocs', meta.get('content'), confidence=0.9)
+
+    return None
+=======
+def detect_mkdocs(soup: BeautifulSoup) -> Optional[FrameworkInfo]:
+    """检测 MkDocs 框架"""
+    # Performance Optimization: Avoid CSS selector parsing overhead
+
+    meta = soup.find('meta', attrs={'name': 'generator'})
+    if meta and meta.get('content') and 'mkdocs' in meta.get('content').lower():
+        return FrameworkInfo('mkdocs', meta.get('content'), confidence=0.9)
+
+    if soup.find(class_=['md-content', 'md-sidebar', 'md-nav', 'wy-nav-content']):
+        return FrameworkInfo('mkdocs', confidence=0.9)
+
+    return None
+>>>>>>> REPLACE
